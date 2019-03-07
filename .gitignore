@@ -1,4 +1,6 @@
 *.lps
+*.o
+*.ppu
 **/backup
 **/lib
 tests/prometheusclienttests
