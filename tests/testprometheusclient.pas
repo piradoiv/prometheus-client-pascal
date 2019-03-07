@@ -21,6 +21,7 @@ type
     procedure TestCanCheckIfMetricExists;
     procedure TestCanUnregisterMetric;
     procedure TestCanGetMetric;
+    procedure TestCanCreateAndRegisterCounter;
   end;
 
 implementation
@@ -78,6 +79,15 @@ begin
   Counter.Inc(42);
   Registry.Register(Counter);
   Counter := TPrometheusCounter(Registry.Get(Counter.Name));
+  AssertEquals(42, Counter.Counter);
+end;
+
+procedure TTestPrometheusClient.TestCanCreateAndRegisterCounter;
+var
+  Counter: TPrometheusCounter;
+begin
+  Counter := Registry.Counter('test', 'help');
+  Counter.Inc(42);
   AssertEquals(42, Counter.Counter);
 end;
 
