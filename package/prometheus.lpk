@@ -7,16 +7,20 @@
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
-        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)/"/>
+        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
     </CompilerOptions>
     <Description Value="Prometheus Client for FreePascal"/>
     <License Value="MIT"/>
-    <Files Count="1">
+    <Files Count="2">
       <Item1>
         <Filename Value="prometheusregistry.pas"/>
-        <UnitName Value="prometheusregistry"/>
+        <UnitName Value="PrometheusRegistry"/>
       </Item1>
+      <Item2>
+        <Filename Value="prometheusclasses.pas"/>
+        <UnitName Value="prometheusclasses"/>
+      </Item2>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>

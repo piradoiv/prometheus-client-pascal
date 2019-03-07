@@ -5,7 +5,7 @@ unit TestPrometheusClient;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry, PrometheusRegistry;
+  Classes, SysUtils, fpcunit, testregistry, PrometheusRegistry;
 
 type
 
@@ -22,9 +22,8 @@ var
 begin
   Registry := TPrometheusRegistry.Create;
   AssertNotNull(Registry);
+  Registry.Free;
 end;
-
-
 
 initialization
 

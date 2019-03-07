@@ -3,7 +3,7 @@ program prometheusclienttests;
 {$mode objfpc}{$H+}
 
 uses
-  Classes, consoletestrunner, TestPrometheusClient;
+  Classes, consoletestrunner, TestPrometheusClient, TestCounter;
 
 type
 
