@@ -5,7 +5,7 @@ unit TestPrometheusClient;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testutils, testregistry;
+  Classes, SysUtils, fpcunit, testutils, testregistry, PrometheusRegistry;
 
 type
 
@@ -17,8 +17,11 @@ type
 implementation
 
 procedure TTestPrometheusClient.TestHookUp;
+var
+  Registry: TPrometheusRegistry;
 begin
-  Fail('Write your own test');
+  Registry := TPrometheusRegistry.Create;
+  AssertNotNull(Registry);
 end;
 
 

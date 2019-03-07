@@ -12,6 +12,12 @@
     </CompilerOptions>
     <Description Value="Prometheus Client for FreePascal"/>
     <License Value="MIT"/>
+    <Files Count="1">
+      <Item1>
+        <Filename Value="prometheusregistry.pas"/>
+        <UnitName Value="prometheusregistry"/>
+      </Item1>
+    </Files>
     <RequiredPkgs Count="1">
       <Item1>
         <PackageName Value="FCL"/>
