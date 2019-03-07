@@ -20,10 +20,13 @@
       <FormatVersion Value="2"/>
       <Modes Count="0"/>
     </RunParams>
-    <RequiredPackages Count="1">
+    <RequiredPackages Count="2">
       <Item1>
-        <PackageName Value="FCL"/>
+        <PackageName Value="prometheus"/>
       </Item1>
+      <Item2>
+        <PackageName Value="FCL"/>
+      </Item2>
     </RequiredPackages>
     <Units Count="2">
       <Unit0>
