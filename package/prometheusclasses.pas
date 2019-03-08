@@ -312,19 +312,24 @@ var
   MetricName: string;
   I: integer;
 begin
-  Lines := TStringList.Create;
-  Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
-  if Description <> '' then
-    Lines.Add(Format('# HELP %s %s', [Name, Description]));
+  Lock;
+  try
+    Lines := TStringList.Create;
+    Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
+    if Description <> '' then
+      Lines.Add(Format('# HELP %s %s', [Name, Description]));
 
-  for I := 0 to FLabels.Count - 1 do
-  begin
-    MetricName := GetMetricName(FLabels.Names[I]);
-    Lines.Add(Format('%s %s', [MetricName, FLabels.ValueFromIndex[I]]));
+    for I := 0 to FLabels.Count - 1 do
+    begin
+      MetricName := GetMetricName(FLabels.Names[I]);
+      Lines.Add(Format('%s %s', [MetricName, FLabels.ValueFromIndex[I]]));
+    end;
+
+    Result := Lines.Text;
+    Lines.Free;
+  finally
+    Unlock;
   end;
-
-  Result := Lines.Text;
-  Lines.Free;
 end;
 
 end.
