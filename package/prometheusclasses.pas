@@ -10,7 +10,7 @@ uses
 type
   TPrometheusOpts = packed record
     Name: string;
-    Help: string;
+    Description: string;
     Labels: TStringList;
   end;
 
@@ -25,13 +25,13 @@ type
     function GetMetricType: string;
   public
     constructor Create(Options: TPrometheusOpts);
-    constructor Create(Name: string; Help: string = '');
-    constructor Create(Name: string; Help: string; Labels: array of const);
+    constructor Create(Name: string; Description: string);
+    constructor Create(Name: string; Description: string; Labels: array of const);
     constructor Create(Name: string; Labels: array of const);
     function Expose: string;
   published
     property Name: string read Opts.Name;
-    property Help: string read Opts.Help;
+    property Description: string read Opts.Description;
     property Labels: TStringList read Opts.Labels;
   end;
 
@@ -220,23 +220,23 @@ begin
   FLabels := TStringList.Create;
 end;
 
-constructor TPrometheusMetric.Create(Name: string; Help: string);
+constructor TPrometheusMetric.Create(Name: string; Description: string);
 var
   Options: TPrometheusOpts;
 begin
   Options.Name := Name;
-  Options.Help := Help;
+  Options.Description := Description;
   Create(Options);
 end;
 
-constructor TPrometheusMetric.Create(Name: string; Help: string;
+constructor TPrometheusMetric.Create(Name: string; Description: string;
   Labels: array of const);
 var
   Options: TPrometheusOpts;
   I: integer;
 begin
   Options.Name := Name;
-  Options.Help := Help;
+  Options.Description := Description;
   Options.Labels := TStringList.Create;
   for I := Low(Labels) to High(Labels) do
     Options.Labels.Add(ansistring(Labels[I].VAnsiString));
@@ -257,8 +257,8 @@ var
 begin
   Lines := TStringList.Create;
   Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
-  if Help <> '' then
-    Lines.Add(Format('# HELP %s %s', [Name, Help]));
+  if Description <> '' then
+    Lines.Add(Format('# HELP %s %s', [Name, Description]));
 
   for I := 0 to FLabels.Count - 1 do
   begin

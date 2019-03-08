@@ -54,7 +54,7 @@ procedure TTestPrometheusClient.TestCanCheckIfMetricExists;
 var
   Counter: TPrometheusCounter;
 begin
-  Counter := TPrometheusCounter.Create('test');
+  Counter := TPrometheusCounter.Create('test', '');
   AssertFalse(Registry.Exists(Counter.Name));
   Registry.Register(Counter);
   AssertTrue(Registry.Exists(Counter.Name));
@@ -64,7 +64,7 @@ procedure TTestPrometheusClient.TestCanUnregisterMetric;
 var
   Counter: TPrometheusCounter;
 begin
-  Counter := TPrometheusCounter.Create('test');
+  Counter := TPrometheusCounter.Create('test', '');
   Registry.Register(Counter);
   AssertTrue(Registry.Exists(Counter.Name));
   Registry.Unregister(Counter.Name);
@@ -75,7 +75,7 @@ procedure TTestPrometheusClient.TestCanGetMetric;
 var
   Counter: TPrometheusCounter;
 begin
-  Counter := TPrometheusCounter.Create('test');
+  Counter := TPrometheusCounter.Create('test', '');
   Counter.Inc(42);
   Registry.Register(Counter);
   Counter := TPrometheusCounter(Registry.Get(Counter.Name));

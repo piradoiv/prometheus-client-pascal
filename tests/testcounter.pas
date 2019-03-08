@@ -47,7 +47,7 @@ end;
 procedure TTestCounter.TestCanGetOptions;
 begin
   AssertEquals('test', TestCounter.Name);
-  AssertEquals('help', Testcounter.Help);
+  AssertEquals('help', Testcounter.Description);
 end;
 
 procedure TTestCounter.TestSetCounterAmount;
@@ -72,7 +72,7 @@ begin
     ['foo', 'bar', 'baz']);
 
   AssertEquals('test', TestCounter.Name);
-  AssertEquals('Test counter', TestCounter.Help);
+  AssertEquals('Test counter', TestCounter.Description);
   AssertEquals(3, TestCounter.Labels.Count);
 end;
 
