@@ -112,8 +112,13 @@ function TPrometheusRegistry.Get(Name: string): TPrometheusMetric;
 var
   Index: integer;
 begin
-  if Storage.Find(Name, Index) then
-    Result := TPrometheusMetric(Storage.Objects[Index]);
+  Lock;
+  try
+    if Storage.Find(Name, Index) then
+      Result := TPrometheusMetric(Storage.Objects[Index]);
+  finally
+    Unlock;
+  end;
 end;
 
 function TPrometheusRegistry.Expose: string;
