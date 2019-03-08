@@ -20,6 +20,9 @@ type
   protected
     Opts: TPrometheusOpts;
     FLabels: TStringList;
+    Mutex: TRTLCriticalSection;
+    procedure Lock;
+    procedure Unlock;
     function GetKeyFromLabels(LabelArray: array of const): string;
     function GetMetricName(LabelString: string): string;
     function GetMetricType: string;
@@ -28,6 +31,7 @@ type
     constructor Create(Name: string; Description: string);
     constructor Create(Name: string; Description: string; Labels: array of const);
     constructor Create(Name: string; Labels: array of const);
+    destructor Destroy; override;
     function Expose: string;
   published
     property Name: string read Opts.Name;
@@ -75,8 +79,13 @@ var
   Key: string;
 begin
   Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] :=
-    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
+  Lock;
+  try
+    FLabels.Values[Key] :=
+      FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
+  finally
+    Unlock;
+  end;
 end;
 
 procedure TPrometheusGauge.Dec(Amount: double);
@@ -89,8 +98,13 @@ var
   Key: string;
 begin
   Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] :=
-    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) - Amount);
+  Lock;
+  try
+    FLabels.Values[Key] :=
+      FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) - Amount);
+  finally
+    Unlock;
+  end;
 end;
 
 procedure TPrometheusGauge.SetAmount(Amount: double);
@@ -103,7 +117,12 @@ var
   Key: string;
 begin
   Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] := FloatToStr(Amount);
+  Lock;
+  try
+    FLabels.Values[Key] := FloatToStr(Amount);
+  finally
+    Unlock;
+  end;
 end;
 
 procedure TPrometheusGauge.SetToCurrentTime;
@@ -116,7 +135,12 @@ var
   Key: string;
 begin
   Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] := IntToStr(DateTimeToUnix(Now));
+  Lock;
+  try
+    FLabels.Values[Key] := IntToStr(DateTimeToUnix(Now));
+  finally
+    Unlock;
+  end;
 end;
 
 function TPrometheusGauge.GetMetric: double;
@@ -126,7 +150,12 @@ end;
 
 function TPrometheusGauge.GetMetric(LabelArray: array of const): double;
 begin
-  Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
+  Lock;
+  try
+    Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
+  finally
+    Unlock;
+  end;
 end;
 
 { TPrometheusCounter }
@@ -144,8 +173,13 @@ begin
     raise Exception.Create('Increment must be a non-negative number');
 
   Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] :=
-    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
+  Lock;
+  try
+    FLabels.Values[Key] :=
+      FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
+  finally
+    Unlock;
+  end;
 end;
 
 function TPrometheusCounter.GetMetric: double;
@@ -155,10 +189,25 @@ end;
 
 function TPrometheusCounter.GetMetric(LabelArray: array of const): double;
 begin
-  Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
+  Lock;
+  try
+    Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
+  finally
+    Unlock;
+  end;
 end;
 
 { TPrometheusMetric }
+
+procedure TPrometheusMetric.Lock;
+begin
+  EnterCriticalSection(Mutex);
+end;
+
+procedure TPrometheusMetric.Unlock;
+begin
+  LeaveCriticalSection(Mutex);
+end;
 
 function TPrometheusMetric.GetKeyFromLabels(LabelArray: array of const): string;
 var
@@ -214,6 +263,7 @@ end;
 
 constructor TPrometheusMetric.Create(Options: TPrometheusOpts);
 begin
+  InitCriticalSection(Mutex);
   if not Assigned(Options.Labels) then
     Options.Labels := TStringList.Create;
   Opts := Options;
@@ -247,6 +297,13 @@ end;
 constructor TPrometheusMetric.Create(Name: string; Labels: array of const);
 begin
   Create(Name, '', Labels);
+end;
+
+destructor TPrometheusMetric.Destroy;
+begin
+  FLabels.Free;
+  DoneCriticalSection(Mutex);
+  inherited Destroy;
 end;
 
 function TPrometheusMetric.Expose: string;
