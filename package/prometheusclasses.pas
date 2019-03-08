@@ -22,12 +22,13 @@ type
     FLabels: TStringList;
     function GetKeyFromLabels(LabelArray: array of const): string;
     function GetMetricName(LabelString: string): string;
+    function GetMetricType: string;
   public
     constructor Create(Options: TPrometheusOpts);
     constructor Create(Name: string; Help: string = '');
     constructor Create(Name: string; Help: string; Labels: array of const);
     constructor Create(Name: string; Labels: array of const);
-    function Expose: string; virtual; abstract;
+    function Expose: string;
   published
     property Name: string read Opts.Name;
     property Help: string read Opts.Help;
@@ -42,7 +43,6 @@ type
     procedure Inc(LabelArray: array of const; Amount: double = 1);
     function GetMetric: double;
     function GetMetric(LabelArray: array of const): double;
-    function Expose: string; override;
   end;
 
   { TPrometheusGauge }
@@ -59,7 +59,6 @@ type
     procedure SetToCurrentTime(LabelArray: array of const);
     function GetMetric: double;
     function GetMetric(LabelArray: array of const): double;
-    function Expose: string; override;
   end;
 
 implementation
@@ -130,27 +129,6 @@ begin
   Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
 end;
 
-function TPrometheusGauge.Expose: string;
-var
-  Lines: TStringList;
-  MetricName: string;
-  I: integer;
-begin
-  Lines := TStringList.Create;
-  Lines.Add(Format('# TYPE %s gauge', [Name]));
-  if Help <> '' then
-    Lines.Add(Format('# HELP %s %s', [Name, Help]));
-
-  for I := 0 to FLabels.Count - 1 do
-  begin
-    MetricName := GetMetricName(FLabels.Names[I]);
-    Lines.Add(Format('%s %s', [MetricName, FLabels.ValueFromIndex[I]]));
-  end;
-
-  Result := Lines.Text;
-  Lines.Free;
-end;
-
 { TPrometheusCounter }
 
 procedure TPrometheusCounter.Inc(Amount: double);
@@ -178,27 +156,6 @@ end;
 function TPrometheusCounter.GetMetric(LabelArray: array of const): double;
 begin
   Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
-end;
-
-function TPrometheusCounter.Expose: string;
-var
-  Lines: TStringList;
-  MetricName: string;
-  I: integer;
-begin
-  Lines := TStringList.Create;
-  Lines.Add(Format('# TYPE %s counter', [Name]));
-  if Help <> '' then
-    Lines.Add(Format('# HELP %s %s', [Name, Help]));
-
-  for I := 0 to FLabels.Count - 1 do
-  begin
-    MetricName := GetMetricName(FLabels.Names[I]);
-    Lines.Add(Format('%s %s', [MetricName, FLabels.ValueFromIndex[I]]));
-  end;
-
-  Result := Lines.Text;
-  Lines.Free;
 end;
 
 { TPrometheusMetric }
@@ -247,6 +204,14 @@ begin
     Result := Name;
 end;
 
+function TPrometheusMetric.GetMetricType: string;
+begin
+  case Self.ToString of
+    'TPrometheusCounter': Result := 'counter';
+    'TPrometheusGauge': Result := 'gauge';
+  end;
+end;
+
 constructor TPrometheusMetric.Create(Options: TPrometheusOpts);
 begin
   if not Assigned(Options.Labels) then
@@ -282,6 +247,27 @@ end;
 constructor TPrometheusMetric.Create(Name: string; Labels: array of const);
 begin
   Create(Name, '', Labels);
+end;
+
+function TPrometheusMetric.Expose: string;
+var
+  Lines: TStringList;
+  MetricName: string;
+  I: integer;
+begin
+  Lines := TStringList.Create;
+  Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
+  if Help <> '' then
+    Lines.Add(Format('# HELP %s %s', [Name, Help]));
+
+  for I := 0 to FLabels.Count - 1 do
+  begin
+    MetricName := GetMetricName(FLabels.Names[I]);
+    Lines.Add(Format('%s %s', [MetricName, FLabels.ValueFromIndex[I]]));
+  end;
+
+  Result := Lines.Text;
+  Lines.Free;
 end;
 
 end.
