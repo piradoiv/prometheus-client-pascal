@@ -20,12 +20,12 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Register(Metric: TPrometheusMetric);
+    procedure Register(Metric: TPrometheusCollector);
     procedure Unregister(Name: string);
     function Counter(Name: string; Help: string = ''): TPrometheusCounter;
     function Gauge(Name: string; Help: string = ''): TPrometheusGauge;
     function Exists(Name: string): boolean;
-    function Get(Name: string): TPrometheusMetric;
+    function Get(Name: string): TPrometheusCollector;
     function Expose: string;
   end;
 
@@ -56,7 +56,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TPrometheusRegistry.Register(Metric: TPrometheusMetric);
+procedure TPrometheusRegistry.Register(Metric: TPrometheusCollector);
 begin
   if Exists(Metric.Name) then
     raise Exception.Create(Format('%s has been already registered', [Metric.Name]));
@@ -108,14 +108,14 @@ begin
   end;
 end;
 
-function TPrometheusRegistry.Get(Name: string): TPrometheusMetric;
+function TPrometheusRegistry.Get(Name: string): TPrometheusCollector;
 var
   Index: integer;
 begin
   Lock;
   try
     if Storage.Find(Name, Index) then
-      Result := TPrometheusMetric(Storage.Objects[Index]);
+      Result := TPrometheusCollector(Storage.Objects[Index]);
   finally
     Unlock;
   end;
@@ -127,7 +127,7 @@ var
 begin
   Result := '';
   for I := 0 to Storage.Count - 1 do
-    Result := Concat(Result, TPrometheusMetric(Storage.Objects[I]).Expose, #13#10);
+    Result := Concat(Result, TPrometheusCollector(Storage.Objects[I]).Expose, #13#10);
 end;
 
 end.

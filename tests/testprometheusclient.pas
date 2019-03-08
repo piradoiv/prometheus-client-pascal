@@ -17,10 +17,10 @@ type
     procedure TearDown; override;
   published
     procedure TestHookUp;
-    procedure TestCanRegisterMetric;
-    procedure TestCanCheckIfMetricExists;
-    procedure TestCanUnregisterMetric;
-    procedure TestCanGetMetric;
+    procedure TestCanRegisterCollector;
+    procedure TestCanCheckIfCollectorExists;
+    procedure TestCanUnregisterCollector;
+    procedure TestCanGetCollector;
     procedure TestCanCreateAndRegisterCounter;
   end;
 
@@ -41,7 +41,7 @@ begin
   AssertNotNull(Registry);
 end;
 
-procedure TTestPrometheusClient.TestCanRegisterMetric;
+procedure TTestPrometheusClient.TestCanRegisterCollector;
 var
   Counter: TPrometheusCounter;
 begin
@@ -50,7 +50,7 @@ begin
   AssertEquals(Counter.Name, TPrometheusCounter(Registry.Get(Counter.Name)).Name);
 end;
 
-procedure TTestPrometheusClient.TestCanCheckIfMetricExists;
+procedure TTestPrometheusClient.TestCanCheckIfCollectorExists;
 var
   Counter: TPrometheusCounter;
 begin
@@ -60,7 +60,7 @@ begin
   AssertTrue(Registry.Exists(Counter.Name));
 end;
 
-procedure TTestPrometheusClient.TestCanUnregisterMetric;
+procedure TTestPrometheusClient.TestCanUnregisterCollector;
 var
   Counter: TPrometheusCounter;
 begin
@@ -71,7 +71,7 @@ begin
   AssertFalse(Registry.Exists(Counter.Name));
 end;
 
-procedure TTestPrometheusClient.TestCanGetMetric;
+procedure TTestPrometheusClient.TestCanGetCollector;
 var
   Counter: TPrometheusCounter;
 begin

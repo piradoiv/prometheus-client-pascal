@@ -14,9 +14,9 @@ type
     Labels: TStringList;
   end;
 
-  { TPrometheusMetric }
+  { TPrometheusCollector }
 
-  TPrometheusMetric = class
+  TPrometheusCollector = class
   protected
     Opts: TPrometheusOpts;
     FLabels: TStringList;
@@ -41,7 +41,7 @@ type
 
   { TPrometheusCounter }
 
-  TPrometheusCounter = class(TPrometheusMetric)
+  TPrometheusCounter = class(TPrometheusCollector)
   public
     procedure Inc(Amount: double = 1);
     procedure Inc(LabelArray: array of const; Amount: double = 1);
@@ -51,7 +51,7 @@ type
 
   { TPrometheusGauge }
 
-  TPrometheusGauge = class(TPrometheusMetric)
+  TPrometheusGauge = class(TPrometheusCollector)
   public
     procedure Inc(Amount: double = 1);
     procedure Inc(LabelArray: array of const; Amount: double = 1);
@@ -197,19 +197,19 @@ begin
   end;
 end;
 
-{ TPrometheusMetric }
+{ TPrometheusCollector }
 
-procedure TPrometheusMetric.Lock;
+procedure TPrometheusCollector.Lock;
 begin
   EnterCriticalSection(Mutex);
 end;
 
-procedure TPrometheusMetric.Unlock;
+procedure TPrometheusCollector.Unlock;
 begin
   LeaveCriticalSection(Mutex);
 end;
 
-function TPrometheusMetric.GetKeyFromLabels(LabelArray: array of const): string;
+function TPrometheusCollector.GetKeyFromLabels(LabelArray: array of const): string;
 var
   LabelList: TStringList;
   I: integer;
@@ -230,7 +230,7 @@ begin
   LabelList.Free;
 end;
 
-function TPrometheusMetric.GetMetricName(LabelString: string): string;
+function TPrometheusCollector.GetMetricName(LabelString: string): string;
 var
   LabelList, ConvertedList: TStringList;
   I: integer;
@@ -253,7 +253,7 @@ begin
     Result := Name;
 end;
 
-function TPrometheusMetric.GetMetricType: string;
+function TPrometheusCollector.GetMetricType: string;
 begin
   case Self.ToString of
     'TPrometheusCounter': Result := 'counter';
@@ -261,7 +261,7 @@ begin
   end;
 end;
 
-constructor TPrometheusMetric.Create(Options: TPrometheusOpts);
+constructor TPrometheusCollector.Create(Options: TPrometheusOpts);
 begin
   InitCriticalSection(Mutex);
   if not Assigned(Options.Labels) then
@@ -270,7 +270,7 @@ begin
   FLabels := TStringList.Create;
 end;
 
-constructor TPrometheusMetric.Create(Name: string; Description: string);
+constructor TPrometheusCollector.Create(Name: string; Description: string);
 var
   Options: TPrometheusOpts;
 begin
@@ -279,7 +279,7 @@ begin
   Create(Options);
 end;
 
-constructor TPrometheusMetric.Create(Name: string; Description: string;
+constructor TPrometheusCollector.Create(Name: string; Description: string;
   Labels: array of const);
 var
   Options: TPrometheusOpts;
@@ -294,19 +294,19 @@ begin
   Create(Options);
 end;
 
-constructor TPrometheusMetric.Create(Name: string; Labels: array of const);
+constructor TPrometheusCollector.Create(Name: string; Labels: array of const);
 begin
   Create(Name, '', Labels);
 end;
 
-destructor TPrometheusMetric.Destroy;
+destructor TPrometheusCollector.Destroy;
 begin
   FLabels.Free;
   DoneCriticalSection(Mutex);
   inherited Destroy;
 end;
 
-function TPrometheusMetric.Expose: string;
+function TPrometheusCollector.Expose: string;
 var
   Lines: TStringList;
   MetricName: string;
