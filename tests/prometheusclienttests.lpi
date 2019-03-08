@@ -28,7 +28,7 @@
         <PackageName Value="FCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="5">
       <Unit0>
         <Filename Value="prometheusclienttests.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -43,6 +43,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="TestCounter"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="testgauge.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TestGauge"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="testexposition.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TestExposition"/>
+      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -54,6 +64,11 @@
       <IncludeFiles Value="$(ProjOutDir)"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <IncludeAssertionCode Value="True"/>
+      </SyntaxOptions>
+    </Parsing>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

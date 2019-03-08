@@ -9,6 +9,8 @@ uses
 
 type
 
+  { TPrometheusRegistry }
+
   TPrometheusRegistry = class
   private
     Storage: TStringList;
@@ -16,10 +18,12 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Register(Metric: TPrometheusMetric);
-    procedure Unregister(Name: string; FreeMetric: boolean = True);
+    procedure Unregister(Name: string);
     function Counter(Name: string; Help: string = ''): TPrometheusCounter;
+    function Gauge(Name: string; Help: string = ''): TPrometheusGauge;
     function Exists(Name: string): boolean;
     function Get(Name: string): TPrometheusMetric;
+    function Expose: string;
   end;
 
 implementation
@@ -28,6 +32,7 @@ constructor TPrometheusRegistry.Create;
 begin
   Storage := TStringList.Create;
   Storage.Sorted := True;
+  Storage.OwnsObjects := True;
 end;
 
 destructor TPrometheusRegistry.Destroy;
@@ -46,22 +51,23 @@ begin
   Storage.AddObject(Metric.Name, Metric);
 end;
 
-procedure TPrometheusRegistry.Unregister(Name: string; FreeMetric: boolean);
+procedure TPrometheusRegistry.Unregister(Name: string);
 var
   Index: integer;
 begin
   if Storage.Find(Name, Index) then
-  begin
-    if FreeMetric then
-      Storage.Objects[Index].Free;
-
     Storage.Delete(Index);
-  end;
 end;
 
 function TPrometheusRegistry.Counter(Name: string; Help: string): TPrometheusCounter;
 begin
   Result := TPrometheusCounter.Create(Name, Help);
+  Self.Register(Result);
+end;
+
+function TPrometheusRegistry.Gauge(Name: string; Help: string): TPrometheusGauge;
+begin
+  Result := TPrometheusGauge.Create(Name, Help);
   Self.Register(Result);
 end;
 
@@ -78,6 +84,15 @@ var
 begin
   if Storage.Find(Name, Index) then
     Result := TPrometheusMetric(Storage.Objects[Index]);
+end;
+
+function TPrometheusRegistry.Expose: string;
+var
+  I: integer;
+begin
+  Result := '';
+  for I := 0 to Storage.Count - 1 do
+    Result := Concat(Result, TPrometheusMetric(Storage.Objects[I]).Expose, #13#10);
 end;
 
 end.

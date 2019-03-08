@@ -79,7 +79,7 @@ begin
   Counter.Inc(42);
   Registry.Register(Counter);
   Counter := TPrometheusCounter(Registry.Get(Counter.Name));
-  AssertEquals(42, Counter.Counter);
+  AssertEquals(42, Counter.GetMetric);
 end;
 
 procedure TTestPrometheusClient.TestCanCreateAndRegisterCounter;
@@ -88,7 +88,7 @@ var
 begin
   Counter := Registry.Counter('test', 'help');
   Counter.Inc(42);
-  AssertEquals(42, Counter.Counter);
+  AssertEquals(42, Counter.GetMetric);
 end;
 
 initialization

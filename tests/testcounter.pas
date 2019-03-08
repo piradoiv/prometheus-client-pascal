@@ -22,7 +22,9 @@ type
     procedure TestCanGetOptions;
     procedure TestSetCounterAmount;
     procedure TestCanIncreaseAmount;
-    procedure TestDecreasingCounterRaisesAnException;
+    procedure TestCanCreateCounterWithLabels;
+    procedure TestCanIncreaseAmountForSpecificLabels;
+    procedure TestShouldThrowAnExceptionWithNegativeArguments;
   end;
 
 implementation
@@ -50,39 +52,57 @@ end;
 
 procedure TTestCounter.TestSetCounterAmount;
 begin
-  AssertEquals(0, TestCounter.Counter);
-  TestCounter.Counter := 42;
-  AssertEquals(42, TestCounter.Counter);
+  AssertEquals(0, TestCounter.GetMetric);
+  TestCounter.Inc(42.0);
+  AssertEquals(42, TestCounter.GetMetric);
 end;
 
 procedure TTestCounter.TestCanIncreaseAmount;
 begin
-  AssertEquals(0, TestCounter.Counter);
+  AssertEquals(0, TestCounter.GetMetric);
   TestCounter.Inc;
-  AssertEquals(1, TestCounter.Counter);
-  TestCounter.Inc(41);
-  AssertEquals(42, TestCounter.Counter);
+  AssertEquals(1, TestCounter.GetMetric);
+  TestCounter.Inc(41.42);
+  AssertEquals(42.42, TestCounter.GetMetric);
 end;
 
-procedure TTestCounter.TestDecreasingCounterRaisesAnException;
+procedure TTestCounter.TestCanCreateCounterWithLabels;
+begin
+  TestCounter := TPrometheusCounter.Create('test', 'Test counter',
+    ['foo', 'bar', 'baz']);
+
+  AssertEquals('test', TestCounter.Name);
+  AssertEquals('Test counter', TestCounter.Help);
+  AssertEquals(3, TestCounter.Labels.Count);
+end;
+
+procedure TTestCounter.TestCanIncreaseAmountForSpecificLabels;
+begin
+  TestCounter := TPrometheusCounter.Create('test', ['datacenter', 'job']);
+  TestCounter.Inc(['job', 'test', 'datacenter', 'eu1'], 10);
+  TestCounter.Inc(['datacenter', 'eu2', 'job', 'test'], 5);
+
+  AssertEquals(10, TestCounter.GetMetric(['datacenter', 'eu1', 'job', 'test']));
+  AssertEquals(5, TestCounter.GetMetric(['datacenter', 'eu2', 'job', 'test']));
+end;
+
+procedure TTestCounter.TestShouldThrowAnExceptionWithNegativeArguments;
 var
-  ExceptionFired: boolean;
+  ExceptionThrown: boolean;
   ExceptionMessage: string;
 begin
-  ExceptionFired := False;
+  ExceptionThrown := False;
   try
-    TestCounter.Counter := 42;
-    TestCounter.Counter := 41;
+    TestCounter.Inc(-1);
   except
     on E: Exception do
     begin
-      ExceptionFired := True;
+      ExceptionThrown := True;
       ExceptionMessage := E.Message;
     end;
   end;
-
-  AssertTrue(ExceptionFired);
-  AssertEquals('Counters can''t be decreased', ExceptionMessage);
+  AssertTrue(ExceptionThrown);
+  AssertEquals('Increment must be a non-negative number', ExceptionMessage);
 end;
 
 initialization
