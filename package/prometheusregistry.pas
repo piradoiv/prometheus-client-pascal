@@ -14,6 +14,9 @@ type
   TPrometheusRegistry = class
   private
     Storage: TStringList;
+    Mutex: TRTLCriticalSection;
+    procedure Lock;
+    procedure Unlock;
   public
     constructor Create;
     destructor Destroy; override;
@@ -28,8 +31,19 @@ type
 
 implementation
 
+procedure TPrometheusRegistry.Lock;
+begin
+  EnterCriticalSection(Mutex);
+end;
+
+procedure TPrometheusRegistry.Unlock;
+begin
+  LeaveCriticalSection(Mutex);
+end;
+
 constructor TPrometheusRegistry.Create;
 begin
+  InitCriticalSection(Mutex);
   Storage := TStringList.Create;
   Storage.Sorted := True;
   Storage.OwnsObjects := True;
@@ -37,18 +51,22 @@ end;
 
 destructor TPrometheusRegistry.Destroy;
 begin
-  inherited Destroy;
   Storage.Free;
+  DoneCriticalSection(Mutex);
+  inherited Destroy;
 end;
 
 procedure TPrometheusRegistry.Register(Metric: TPrometheusMetric);
-var
-  Index: integer;
 begin
-  if Storage.Find(Metric.Name, Index) then
+  if Exists(Metric.Name) then
     raise Exception.Create(Format('%s has been already registered', [Metric.Name]));
 
-  Storage.AddObject(Metric.Name, Metric);
+  Lock;
+  try
+    Storage.AddObject(Metric.Name, Metric);
+  finally
+    Unlock;
+  end;
 end;
 
 procedure TPrometheusRegistry.Unregister(Name: string);
@@ -56,7 +74,14 @@ var
   Index: integer;
 begin
   if Storage.Find(Name, Index) then
-    Storage.Delete(Index);
+  begin
+    Lock;
+    try
+      Storage.Delete(Index);
+    finally
+      Unlock;
+    end;
+  end;
 end;
 
 function TPrometheusRegistry.Counter(Name: string; Help: string): TPrometheusCounter;
@@ -75,7 +100,12 @@ function TPrometheusRegistry.Exists(Name: string): boolean;
 var
   Index: integer;
 begin
-  Result := Storage.Find(Name, Index);
+  Lock;
+  try
+    Result := Storage.Find(Name, Index);
+  finally
+    Unlock;
+  end;
 end;
 
 function TPrometheusRegistry.Get(Name: string): TPrometheusMetric;
