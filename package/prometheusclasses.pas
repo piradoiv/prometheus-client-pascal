@@ -5,7 +5,7 @@ unit PrometheusClasses;
 interface
 
 uses
-  Classes, SysUtils, DateUtils;
+  Classes, SysUtils, DateUtils, contnrs;
 
 type
   TPrometheusOpts = packed record
@@ -20,6 +20,7 @@ type
   protected
     Opts: TPrometheusOpts;
     FLabels: TStringList;
+    Storage: TFPHashList;
     function GetKeyFromLabels(LabelArray: array of const): string;
     function GetMetricName(LabelString: string): string;
     function GetMetricType: string;
@@ -219,6 +220,7 @@ begin
     Options.Labels := TStringList.Create;
   Opts := Options;
   FLabels := TStringList.Create;
+  Storage := TFPHashList.Create;
 end;
 
 constructor TPrometheusCollector.Create(Name: string; Description: string);
@@ -253,6 +255,7 @@ end;
 destructor TPrometheusCollector.Destroy;
 begin
   FLabels.Free;
+  Storage.Free;
   inherited Destroy;
 end;
 
