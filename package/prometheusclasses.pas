@@ -20,9 +20,6 @@ type
   protected
     Opts: TPrometheusOpts;
     FLabels: TStringList;
-    Mutex: TRTLCriticalSection;
-    procedure Lock;
-    procedure Unlock;
     function GetKeyFromLabels(LabelArray: array of const): string;
     function GetMetricName(LabelString: string): string;
     function GetMetricType: string;
@@ -79,13 +76,8 @@ var
   Key: string;
 begin
   Key := GetKeyFromLabels(LabelArray);
-  Lock;
-  try
-    FLabels.Values[Key] :=
-      FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
-  finally
-    Unlock;
-  end;
+  FLabels.Values[Key] :=
+    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
 end;
 
 procedure TPrometheusGauge.Dec(Amount: double);
@@ -98,13 +90,8 @@ var
   Key: string;
 begin
   Key := GetKeyFromLabels(LabelArray);
-  Lock;
-  try
-    FLabels.Values[Key] :=
-      FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) - Amount);
-  finally
-    Unlock;
-  end;
+  FLabels.Values[Key] :=
+    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) - Amount);
 end;
 
 procedure TPrometheusGauge.SetAmount(Amount: double);
@@ -117,12 +104,7 @@ var
   Key: string;
 begin
   Key := GetKeyFromLabels(LabelArray);
-  Lock;
-  try
-    FLabels.Values[Key] := FloatToStr(Amount);
-  finally
-    Unlock;
-  end;
+  FLabels.Values[Key] := FloatToStr(Amount);
 end;
 
 procedure TPrometheusGauge.SetToCurrentTime;
@@ -135,12 +117,7 @@ var
   Key: string;
 begin
   Key := GetKeyFromLabels(LabelArray);
-  Lock;
-  try
-    FLabels.Values[Key] := IntToStr(DateTimeToUnix(Now));
-  finally
-    Unlock;
-  end;
+  FLabels.Values[Key] := IntToStr(DateTimeToUnix(Now));
 end;
 
 function TPrometheusGauge.GetMetric: double;
@@ -150,12 +127,7 @@ end;
 
 function TPrometheusGauge.GetMetric(LabelArray: array of const): double;
 begin
-  Lock;
-  try
-    Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
-  finally
-    Unlock;
-  end;
+  Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
 end;
 
 { TPrometheusCounter }
@@ -173,13 +145,8 @@ begin
     raise Exception.Create('Increment must be a non-negative number');
 
   Key := GetKeyFromLabels(LabelArray);
-  Lock;
-  try
-    FLabels.Values[Key] :=
-      FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
-  finally
-    Unlock;
-  end;
+  FLabels.Values[Key] :=
+    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
 end;
 
 function TPrometheusCounter.GetMetric: double;
@@ -189,25 +156,10 @@ end;
 
 function TPrometheusCounter.GetMetric(LabelArray: array of const): double;
 begin
-  Lock;
-  try
-    Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
-  finally
-    Unlock;
-  end;
+  Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
 end;
 
 { TPrometheusCollector }
-
-procedure TPrometheusCollector.Lock;
-begin
-  EnterCriticalSection(Mutex);
-end;
-
-procedure TPrometheusCollector.Unlock;
-begin
-  LeaveCriticalSection(Mutex);
-end;
 
 function TPrometheusCollector.GetKeyFromLabels(LabelArray: array of const): string;
 var
@@ -263,7 +215,6 @@ end;
 
 constructor TPrometheusCollector.Create(Options: TPrometheusOpts);
 begin
-  InitCriticalSection(Mutex);
   if not Assigned(Options.Labels) then
     Options.Labels := TStringList.Create;
   Opts := Options;
@@ -302,7 +253,6 @@ end;
 destructor TPrometheusCollector.Destroy;
 begin
   FLabels.Free;
-  DoneCriticalSection(Mutex);
   inherited Destroy;
 end;
 
@@ -312,24 +262,19 @@ var
   MetricName: string;
   I: integer;
 begin
-  Lock;
-  try
-    Lines := TStringList.Create;
-    Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
-    if Description <> '' then
-      Lines.Add(Format('# HELP %s %s', [Name, Description]));
+  Lines := TStringList.Create;
+  Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
+  if Description <> '' then
+    Lines.Add(Format('# HELP %s %s', [Name, Description]));
 
-    for I := 0 to FLabels.Count - 1 do
-    begin
-      MetricName := GetMetricName(FLabels.Names[I]);
-      Lines.Add(Format('%s %s', [MetricName, FLabels.ValueFromIndex[I]]));
-    end;
-
-    Result := Lines.Text;
-    Lines.Free;
-  finally
-    Unlock;
+  for I := 0 to FLabels.Count - 1 do
+  begin
+    MetricName := GetMetricName(FLabels.Names[I]);
+    Lines.Add(Format('%s %s', [MetricName, FLabels.ValueFromIndex[I]]));
   end;
+
+  Result := Lines.Text;
+  Lines.Free;
 end;
 
 end.
