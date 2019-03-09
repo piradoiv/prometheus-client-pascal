@@ -26,6 +26,7 @@ type
     procedure TestCanIncreaseAmountForSpecificLabels;
     procedure TestShouldThrowAnExceptionWithNegativeArguments;
     procedure TestCanGetWithLabelsChildren;
+    procedure TestCanIncreaseAmountOnChildren;
   end;
 
 implementation
@@ -112,6 +113,15 @@ var
 begin
   Children := TestCounter.WithLabels(['foo', 'bar']);
   AssertEquals('foo:bar', Children.Key);
+end;
+
+procedure TTestCounter.TestCanIncreaseAmountOnChildren;
+var
+  Children: TPrometheusCounterChildren;
+begin
+  Children := TestCounter.WithLabels(['foo', 'bar']);
+  Children.Inc(42);
+  AssertEquals(42, Children.GetMetric);
 end;
 
 initialization

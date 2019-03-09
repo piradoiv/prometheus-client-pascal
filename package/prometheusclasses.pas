@@ -37,8 +37,15 @@ type
     property Labels: TStringList read Opts.Labels;
   end;
 
+  { TPrometheusCounterChildren }
+
   TPrometheusCounterChildren = object
+  private
+    Value: double;
+  public
     Key: string;
+    procedure Inc(Amount: double = 1);
+    function GetMetric: double;
   end;
 
   { TPrometheusCounter }
@@ -69,6 +76,18 @@ type
   end;
 
 implementation
+
+{ TPrometheusCounterChildren }
+
+procedure TPrometheusCounterChildren.Inc(Amount: double);
+begin
+  Value := Value + Amount;
+end;
+
+function TPrometheusCounterChildren.GetMetric: double;
+begin
+  Result := Value;
+end;
 
 { TPrometheusGauge }
 
