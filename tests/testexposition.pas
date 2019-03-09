@@ -50,8 +50,8 @@ begin
   Counter := Prometheus.Counter('http_requests_total',
     'The total number of HTTP requests');
   Counter.Inc(1030);
-  Counter.Inc(['method', 'post', 'code', '200'], 1027);
-  Counter.Inc(['method', 'post', 'code', '400'], 3);
+  Counter.WithLabels(['method', 'post', 'code', '200']).Inc(1027);
+  Counter.WithLabels(['method', 'post', 'code', '400']).Inc(3);
 
   ExpectedList := TStringList.Create;
   with ExpectedList do

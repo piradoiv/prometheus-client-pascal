@@ -53,9 +53,7 @@ type
   TPrometheusCounter = class(TPrometheusCollector)
   public
     procedure Inc(Amount: double = 1);
-    procedure Inc(LabelArray: array of const; Amount: double = 1);
     function GetMetric: double;
-    function GetMetric(LabelArray: array of const): double;
     function WithLabels(LabelArray: array of const): TPrometheusCounterChildren;
   end;
 
@@ -81,6 +79,8 @@ implementation
 
 procedure TPrometheusCounterChildren.Inc(Amount: double);
 begin
+  if Amount < 0 then
+    raise Exception.Create('Increment must be a non-negative number');
   Value := Value + Amount;
 end;
 
@@ -159,29 +159,12 @@ end;
 
 procedure TPrometheusCounter.Inc(Amount: double);
 begin
-  Inc(['___metric', '___default'], Amount);
-end;
-
-procedure TPrometheusCounter.Inc(LabelArray: array of const; Amount: double);
-var
-  Key: string;
-begin
-  if Amount < 0 then
-    raise Exception.Create('Increment must be a non-negative number');
-
-  Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] :=
-    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
+  WithLabels(['___metric', '___default']).Inc(Amount);
 end;
 
 function TPrometheusCounter.GetMetric: double;
 begin
-  Result := GetMetric(['___metric', '___default']);
-end;
-
-function TPrometheusCounter.GetMetric(LabelArray: array of const): double;
-begin
-  Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
+  Result := WithLabels(['___metric', '___default']).GetMetric;
 end;
 
 function TPrometheusCounter.WithLabels(LabelArray: array of const):
@@ -192,9 +175,13 @@ var
 begin
   Key := GetKeyFromLabels(LabelArray);
   Index := Storage.FindIndexOf(Key);
-  Result.Key := Key;
+
   if Index < 0 then
+  begin
+    Result.Key := Key;
+    Result.Value := 0;
     Storage.Add(Key, @Result);
+  end;
 
   Result := TPrometheusCounterChildren(Storage.Find(Key)^);
 end;

@@ -81,11 +81,11 @@ end;
 procedure TTestCounter.TestCanIncreaseAmountForSpecificLabels;
 begin
   TestCounter := TPrometheusCounter.Create('test', ['datacenter', 'job']);
-  TestCounter.Inc(['job', 'test', 'datacenter', 'eu1'], 10);
-  TestCounter.Inc(['datacenter', 'eu2', 'job', 'test'], 5);
+  TestCounter.WithLabels(['job', 'test', 'datacenter', 'eu1']).Inc(10);
+  TestCounter.WithLabels(['datacenter', 'eu2', 'job', 'test']).Inc(5);
 
-  AssertEquals(10, TestCounter.GetMetric(['datacenter', 'eu1', 'job', 'test']));
-  AssertEquals(5, TestCounter.GetMetric(['datacenter', 'eu2', 'job', 'test']));
+  AssertEquals(10, TestCounter.WithLabels(['datacenter', 'eu1', 'job', 'test']).GetMetric);
+  AssertEquals(5, TestCounter.WithLabels(['datacenter', 'eu2', 'job', 'test']).GetMetric);
 end;
 
 procedure TTestCounter.TestShouldThrowAnExceptionWithNegativeArguments;
