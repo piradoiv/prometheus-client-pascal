@@ -37,6 +37,10 @@ type
     property Labels: TStringList read Opts.Labels;
   end;
 
+  TPrometheusCounterChildren = object
+    Key: string;
+  end;
+
   { TPrometheusCounter }
 
   TPrometheusCounter = class(TPrometheusCollector)
@@ -45,6 +49,7 @@ type
     procedure Inc(LabelArray: array of const; Amount: double = 1);
     function GetMetric: double;
     function GetMetric(LabelArray: array of const): double;
+    function WithLabels(LabelArray: array of const): TPrometheusCounterChildren;
   end;
 
   { TPrometheusGauge }
@@ -158,6 +163,21 @@ end;
 function TPrometheusCounter.GetMetric(LabelArray: array of const): double;
 begin
   Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
+end;
+
+function TPrometheusCounter.WithLabels(LabelArray: array of const):
+TPrometheusCounterChildren;
+var
+  Key: string;
+  Index: integer;
+begin
+  Key := GetKeyFromLabels(LabelArray);
+  Index := Storage.FindIndexOf(Key);
+  Result.Key := Key;
+  if Index < 0 then
+    Storage.Add(Key, @Result);
+
+  Result := TPrometheusCounterChildren(Storage.Find(Key)^);
 end;
 
 { TPrometheusCollector }
