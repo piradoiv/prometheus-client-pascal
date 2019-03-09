@@ -55,7 +55,7 @@ end;
 procedure TTestCounter.TestSetCounterAmount;
 begin
   AssertEquals(0, TestCounter.GetMetric);
-  TestCounter.Inc(42.0);
+  TestCounter.Inc(42);
   AssertEquals(42, TestCounter.GetMetric);
 end;
 
@@ -64,8 +64,8 @@ begin
   AssertEquals(0, TestCounter.GetMetric);
   TestCounter.Inc;
   AssertEquals(1, TestCounter.GetMetric);
-  TestCounter.Inc(41.42);
-  AssertEquals(42.42, TestCounter.GetMetric);
+  TestCounter.Inc(41);
+  AssertEquals(42, TestCounter.GetMetric);
 end;
 
 procedure TTestCounter.TestCanCreateCounterWithLabels;
