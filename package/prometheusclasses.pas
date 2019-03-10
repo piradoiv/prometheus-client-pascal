@@ -130,27 +130,27 @@ end;
 
 procedure TPrometheusGauge.Inc(Amount: double);
 begin
-  WithLabels(['___metric', '___default']).Inc(Amount);
+  WithLabels([]).Inc(Amount);
 end;
 
 procedure TPrometheusGauge.Dec(Amount: double);
 begin
-  WithLabels(['___metric', '___default']).Dec(Amount);
+  WithLabels([]).Dec(Amount);
 end;
 
 procedure TPrometheusGauge.SetAmount(Amount: double);
 begin
-  WithLabels(['___metric', '___default']).SetAmount(Amount);
+  WithLabels([]).SetAmount(Amount);
 end;
 
 procedure TPrometheusGauge.SetToCurrentTime;
 begin
-  WithLabels(['___metric', '___default']).SetToCurrentTime;
+  WithLabels([]).SetToCurrentTime;
 end;
 
 function TPrometheusGauge.GetMetric: double;
 begin
-  Result := Self.WithLabels(['___metric', '___default']).GetMetric;
+  Result := Self.WithLabels([]).GetMetric;
 end;
 
 function TPrometheusGauge.WithLabels(LabelArray: array of const):
@@ -177,12 +177,12 @@ end;
 
 procedure TPrometheusCounter.Inc(Amount: double);
 begin
-  WithLabels(['___metric', '___default']).Inc(Amount);
+  WithLabels([]).Inc(Amount);
 end;
 
 function TPrometheusCounter.GetMetric: double;
 begin
-  Result := WithLabels(['___metric', '___default']).GetMetric;
+  Result := WithLabels([]).GetMetric;
 end;
 
 function TPrometheusCounter.WithLabels(LabelArray: array of
@@ -247,7 +247,7 @@ begin
       Format('"%s"', [LabelList.ValueFromIndex[I]]);
 
   Result := Format('%s{%s}', [Name, ConvertedList.DelimitedText]);
-  if ConvertedList.DelimitedText = '___metric="___default"' then
+  if ConvertedList.DelimitedText = '' then
     Result := Name;
 end;
 
