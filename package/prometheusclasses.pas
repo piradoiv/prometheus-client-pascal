@@ -5,7 +5,7 @@ unit PrometheusClasses;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, contnrs;
+  Classes, SysUtils, DateUtils, StrUtils, contnrs;
 
 type
   TPrometheusOpts = packed record
@@ -153,7 +153,8 @@ begin
   Result := Self.WithLabels(['___metric', '___default']).GetMetric;
 end;
 
-function TPrometheusGauge.WithLabels(LabelArray: array of const): TPrometheusGaugeChildren;
+function TPrometheusGauge.WithLabels(LabelArray: array of const):
+TPrometheusGaugeChildren;
 var
   Key: string;
   Index: integer;
@@ -184,8 +185,8 @@ begin
   Result := WithLabels(['___metric', '___default']).GetMetric;
 end;
 
-function TPrometheusCounter.WithLabels(LabelArray: array of const):
-TPrometheusCounterChildren;
+function TPrometheusCounter.WithLabels(LabelArray: array of
+  const): TPrometheusCounterChildren;
 var
   Key: string;
   Index: integer;
@@ -322,7 +323,7 @@ begin
     MetricName := GetMetricName(Storage.NameOfIndex(I));
     Children := TPrometheusCounterChildren(Storage.Items[I]);
     Amount := Format('%f', [Children.GetMetric]);
-    if Amount.EndsText('.00', Amount) then
+    if AnsiEndsStr('.00', Amount) then
       Amount := IntToStr(Round(Children.GetMetric));
     Lines.Add(Format('%s %s', [MetricName, Amount]));
   end;
