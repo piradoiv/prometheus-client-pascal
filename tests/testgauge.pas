@@ -69,25 +69,25 @@ end;
 
 procedure TTestGauge.TestCanIncreaseAndDecreaseAmountsForSpecificLabels;
 begin
-  TestGauge.Inc(['foo', 'yes'], 10);
-  TestGauge.Inc(['bar', 'yes'], 20);
-  TestGauge.Inc(['foo', 'no', 'bar', 'yes'], 30);
+  TestGauge.WithLabels(['foo', 'yes']).Inc(10);
+  TestGauge.WithLabels(['bar', 'yes']).Inc(20);
+  TestGauge.WithLabels(['foo', 'no', 'bar', 'yes']).Inc(30);
 
-  TestGauge.Dec(['foo', 'yes'], 5);
-  TestGauge.Dec(['bar', 'yes'], 5);
-  TestGauge.Dec(['foo', 'no', 'bar', 'yes'], 5);
+  TestGauge.WithLabels(['foo', 'yes']).Dec(5);
+  TestGauge.WithLabels(['bar', 'yes']).Dec(5);
+  TestGauge.WithLabels(['foo', 'no', 'bar', 'yes']).Dec(5);
 
-  AssertEquals(5, TestGauge.GetMetric(['foo', 'yes']));
-  AssertEquals(15, TestGauge.GetMetric(['bar', 'yes']));
-  AssertEquals(25, TestGauge.GetMetric(['foo', 'no', 'bar', 'yes']));
+  AssertEquals(5, TestGauge.WithLabels(['foo', 'yes']).GetMetric);
+  AssertEquals(15, TestGauge.WithLabels(['bar', 'yes']).GetMetric);
+  AssertEquals(25, TestGauge.WithLabels(['foo', 'no', 'bar', 'yes']).GetMetric);
 end;
 
 procedure TTestGauge.TestCanSetAmount;
 begin
   TestGauge.SetAmount(42);
   AssertEquals(42, TestGauge.GetMetric);
-  TestGauge.SetAmount(['foo', 'yes'], 128);
-  AssertEquals(128, TestGauge.GetMetric(['foo', 'yes']));
+  TestGauge.WithLabels(['foo', 'yes']).SetAmount(128);
+  AssertEquals(128, TestGauge.WithLabels(['foo', 'yes']).GetMetric);
 end;
 
 procedure TTestGauge.TestCanSetToCurrentTime;

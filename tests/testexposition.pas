@@ -82,10 +82,10 @@ var
 begin
   Gauge := Prometheus.Gauge('active_users', 'The current number of active users');
   Gauge.Inc(600);
-  Gauge.Inc(['type', 'anonymous'], 300);
-  Gauge.Inc(['type', 'users'], 200);
-  Gauge.Inc(['type', 'administrators'], 10);
-  Gauge.Dec(['type', 'anonymous'], 10);
+  Gauge.WithLabels(['type', 'anonymous']).Inc(300);
+  Gauge.WithLabels(['type', 'users']).Inc(200);
+  Gauge.WithLabels(['type', 'administrators']).Inc(10);
+  Gauge.WithLabels(['type', 'anonymous']).Dec(10);
   Gauge.SetAmount(590);
 
   ExpectedList := TStringList.Create;

@@ -20,7 +20,7 @@ type
   protected
     Opts: TPrometheusOpts;
     FLabels: TStringList;
-    Storage: TFPHashList;
+    Storage: TFPHashObjectList;
     function GetKeyFromLabels(LabelArray: array of const): string;
     function GetMetricName(LabelString: string): string;
     function GetMetricType: string;
@@ -39,7 +39,7 @@ type
 
   { TPrometheusCounterChildren }
 
-  TPrometheusCounterChildren = object
+  TPrometheusCounterChildren = class
   private
     Value: double;
   public
@@ -57,23 +57,60 @@ type
     function WithLabels(LabelArray: array of const): TPrometheusCounterChildren;
   end;
 
+  { TPrometheusGaugeChildren }
+
+  TPrometheusGaugeChildren = class
+  private
+    Value: double;
+  public
+    Key: string;
+    procedure Inc(Amount: double = 1);
+    procedure Dec(Amount: double = 1);
+    procedure SetAmount(Amount: double = 1);
+    procedure SetToCurrentTime;
+    function GetMetric: double;
+  end;
+
   { TPrometheusGauge }
 
   TPrometheusGauge = class(TPrometheusCollector)
   public
     procedure Inc(Amount: double = 1);
-    procedure Inc(LabelArray: array of const; Amount: double = 1);
     procedure Dec(Amount: double = 1);
-    procedure Dec(LabelArray: array of const; Amount: double = 1);
     procedure SetAmount(Amount: double = 1);
-    procedure SetAmount(LabelArray: array of const; Amount: double = 1);
     procedure SetToCurrentTime;
-    procedure SetToCurrentTime(LabelArray: array of const);
     function GetMetric: double;
-    function GetMetric(LabelArray: array of const): double;
+    function WithLabels(LabelArray: array of const): TPrometheusGaugeChildren;
   end;
 
 implementation
+
+{ TPrometheusGaugeChildren }
+
+procedure TPrometheusGaugeChildren.Inc(Amount: double);
+begin
+  Value := Value + Amount;
+end;
+
+procedure TPrometheusGaugeChildren.Dec(Amount: double);
+begin
+  Value := Value - Amount;
+end;
+
+procedure TPrometheusGaugeChildren.SetAmount(Amount: double);
+begin
+  Value := Amount;
+end;
+
+procedure TPrometheusGaugeChildren.SetToCurrentTime;
+begin
+  Value := DateTimeToUnix(Now);
+end;
+
+function TPrometheusGaugeChildren.GetMetric: double;
+begin
+  Result := Value;
+end;
 
 { TPrometheusCounterChildren }
 
@@ -93,66 +130,46 @@ end;
 
 procedure TPrometheusGauge.Inc(Amount: double);
 begin
-  Self.Inc(['___metric', '___default'], Amount);
-end;
-
-procedure TPrometheusGauge.Inc(LabelArray: array of const; Amount: double);
-var
-  Key: string;
-begin
-  Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] :=
-    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) + Amount);
+  WithLabels(['___metric', '___default']).Inc(Amount);
 end;
 
 procedure TPrometheusGauge.Dec(Amount: double);
 begin
-  Self.Dec(['___metric', '___default'], Amount);
-end;
-
-procedure TPrometheusGauge.Dec(LabelArray: array of const; Amount: double);
-var
-  Key: string;
-begin
-  Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] :=
-    FloatToStr(StrToFloatDef(FLabels.Values[Key], 0) - Amount);
+  WithLabels(['___metric', '___default']).Dec(Amount);
 end;
 
 procedure TPrometheusGauge.SetAmount(Amount: double);
 begin
-  SetAmount(['___metric', '___default'], Amount);
-end;
-
-procedure TPrometheusGauge.SetAmount(LabelArray: array of const; Amount: double);
-var
-  Key: string;
-begin
-  Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] := FloatToStr(Amount);
+  WithLabels(['___metric', '___default']).SetAmount(Amount);
 end;
 
 procedure TPrometheusGauge.SetToCurrentTime;
 begin
-  SetToCurrentTime(['___metric', '___default']);
-end;
-
-procedure TPrometheusGauge.SetToCurrentTime(LabelArray: array of const);
-var
-  Key: string;
-begin
-  Key := GetKeyFromLabels(LabelArray);
-  FLabels.Values[Key] := IntToStr(DateTimeToUnix(Now));
+  WithLabels(['___metric', '___default']).SetToCurrentTime;
 end;
 
 function TPrometheusGauge.GetMetric: double;
 begin
-  Result := Self.GetMetric(['___metric', '___default']);
+  Result := Self.WithLabels(['___metric', '___default']).GetMetric;
 end;
 
-function TPrometheusGauge.GetMetric(LabelArray: array of const): double;
+function TPrometheusGauge.WithLabels(LabelArray: array of const): TPrometheusGaugeChildren;
+var
+  Key: string;
+  Index: integer;
 begin
-  Result := StrToFloatDef(FLabels.Values[GetKeyFromLabels(LabelArray)], 0);
+  Key := GetKeyFromLabels(LabelArray);
+  Index := Storage.FindIndexOf(Key);
+
+  if Index < 0 then
+  begin
+    Result := TPrometheusGaugeChildren.Create;
+    Result.Key := Key;
+    Result.Inc(0);
+    Index := Storage.Add(Key, Result);
+  end;
+
+  Result := TPrometheusGaugeChildren(Storage.Items[Index]);
 end;
 
 { TPrometheusCounter }
@@ -178,12 +195,13 @@ begin
 
   if Index < 0 then
   begin
+    Result := TPrometheusCounterChildren.Create;
     Result.Key := Key;
-    Result.Value := 0;
-    Storage.Add(Key, @Result);
+    Result.Inc(0);
+    Index := Storage.Add(Key, Result);
   end;
 
-  Result := TPrometheusCounterChildren(Storage.Find(Key)^);
+  Result := TPrometheusCounterChildren(Storage.Items[Index]);
 end;
 
 { TPrometheusCollector }
@@ -246,7 +264,8 @@ begin
     Options.Labels := TStringList.Create;
   Opts := Options;
   FLabels := TStringList.Create;
-  Storage := TFPHashList.Create;
+  Storage := TFPHashObjectList.Create;
+  Storage.OwnsObjects := True;
 end;
 
 constructor TPrometheusCollector.Create(Name: string; Description: string);
@@ -290,16 +309,22 @@ var
   Lines: TStringList;
   MetricName: string;
   I: integer;
+  Children: TPrometheusCounterChildren;
+  Amount: string;
 begin
   Lines := TStringList.Create;
   Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
   if Description <> '' then
     Lines.Add(Format('# HELP %s %s', [Name, Description]));
 
-  for I := 0 to FLabels.Count - 1 do
+  for I := 0 to Storage.Count - 1 do
   begin
-    MetricName := GetMetricName(FLabels.Names[I]);
-    Lines.Add(Format('%s %s', [MetricName, FLabels.ValueFromIndex[I]]));
+    MetricName := GetMetricName(Storage.NameOfIndex(I));
+    Children := TPrometheusCounterChildren(Storage.Items[I]);
+    Amount := Format('%f', [Children.GetMetric]);
+    if Amount.EndsText('.00', Amount) then
+      Amount := IntToStr(Round(Children.GetMetric));
+    Lines.Add(Format('%s %s', [MetricName, Amount]));
   end;
 
   Result := Lines.Text;
