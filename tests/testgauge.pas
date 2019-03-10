@@ -109,7 +109,7 @@ begin
   Children.StartTimer;
   Sleep(10);
   TestGauge.StartTimer;
-  Sleep(10);
+  Sleep(11);
   TestGauge.SetDuration;
   Sleep(10);
   Children.SetDuration;
