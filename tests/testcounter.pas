@@ -13,7 +13,7 @@ type
 
   TTestCounter = class(TTestCase)
   private
-    function BuildCounter: TPrometheusCounter;
+    TestCounter: TPrometheusCounter;
   protected
     procedure SetUp; override;
     procedure TearDown; override;
@@ -27,55 +27,41 @@ type
     procedure TestShouldThrowAnExceptionWithNegativeArguments;
     procedure TestCanGetWithLabelsChildren;
     procedure TestCanIncreaseAmountOnChildren;
+    procedure TestLabelNamesAreBeingVerified;
   end;
 
 implementation
 
-function TTestCounter.BuildCounter: TPrometheusCounter;
-begin
-  Result := TPrometheusCounter.Create('test', 'help');
-end;
-
 procedure TTestCounter.SetUp;
 begin
+  TestCounter := TPrometheusCounter.Create('test', 'help');
 end;
 
 procedure TTestCounter.TearDown;
 begin
+  TestCounter.Free;
 end;
 
 procedure TTestCounter.TestHookUp;
-var
-  TestCounter: TPrometheusCounter;
 begin
-  TestCounter := BuildCounter;
   AssertNotNull(TestCounter);
 end;
 
 procedure TTestCounter.TestCanGetOptions;
-var
-  TestCounter: TPrometheusCounter;
 begin
-  TestCounter := BuildCounter;
   AssertEquals('test', TestCounter.Name);
   AssertEquals('help', Testcounter.Description);
 end;
 
 procedure TTestCounter.TestSetCounterAmount;
-var
-  TestCounter: TPrometheusCounter;
 begin
-  TestCounter := BuildCounter;
   AssertEquals(0, TestCounter.GetMetric);
   TestCounter.Inc(42);
   AssertEquals(42, TestCounter.GetMetric);
 end;
 
 procedure TTestCounter.TestCanIncreaseAmount;
-var
-  TestCounter: TPrometheusCounter;
 begin
-  TestCounter := BuildCounter;
   AssertEquals(0, TestCounter.GetMetric);
   TestCounter.Inc;
   AssertEquals(1, TestCounter.GetMetric);
@@ -84,8 +70,6 @@ begin
 end;
 
 procedure TTestCounter.TestCanCreateCounterWithLabels;
-var
-  TestCounter: TPrometheusCounter;
 begin
   TestCounter := TPrometheusCounter.Create('test', 'Test counter',
     ['foo', 'bar', 'baz']);
@@ -96,8 +80,6 @@ begin
 end;
 
 procedure TTestCounter.TestCanIncreaseAmountForSpecificLabels;
-var
-  TestCounter: TPrometheusCounter;
 begin
   TestCounter := TPrometheusCounter.Create('test', ['datacenter', 'job']);
   TestCounter.WithLabels(['job', 'test', 'datacenter', 'eu1']).Inc(10);
@@ -109,11 +91,9 @@ end;
 
 procedure TTestCounter.TestShouldThrowAnExceptionWithNegativeArguments;
 var
-  TestCounter: TPrometheusCounter;
   ExceptionThrown: boolean;
   ExceptionMessage: string;
 begin
-  TestCounter := BuildCounter;
   ExceptionThrown := False;
   try
     TestCounter.Inc(-1);
@@ -130,20 +110,16 @@ end;
 
 procedure TTestCounter.TestCanGetWithLabelsChildren;
 var
-  TestCounter: TPrometheusCounter;
   Children: TPrometheusCounterChildren;
 begin
-  TestCounter := BuildCounter;
   Children := TestCounter.WithLabels(['foo', 'bar']);
   AssertEquals('foo:bar', Children.Key);
 end;
 
 procedure TTestCounter.TestCanIncreaseAmountOnChildren;
 var
-  TestCounter: TPrometheusCounter;
   Children: TPrometheusCounterChildren;
 begin
-  TestCounter := BuildCounter;
   Children := TestCounter.WithLabels(['foo', 'bar']);
   TestCounter.WithLabels(['foo', 'bar']).Inc(1);
   TestCounter.WithLabels(['foo', 'bar']).Inc(1);
