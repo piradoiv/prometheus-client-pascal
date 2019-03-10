@@ -25,6 +25,7 @@ type
     procedure TestCanIncreaseAndDecreaseAmountsForSpecificLabels;
     procedure TestCanSetAmount;
     procedure TestCanSetToCurrentTime;
+    procedure TestCanUseTimer;
   end;
 
 implementation
@@ -98,6 +99,25 @@ begin
   Timestamp := DateTimeToUnix(Now);
   AssertTrue(TestGauge.GetMetric > Timestamp - 2);
   AssertTrue(TestGauge.GetMetric < Timestamp + 2);
+end;
+
+procedure TTestGauge.TestCanUseTimer;
+var
+  Children: TPrometheusGaugeChildren;
+begin
+  Children := TestGauge.WithLabels(['foo', 'bar']);
+  Children.StartTimer;
+  Sleep(10);
+  TestGauge.StartTimer;
+  Sleep(10);
+  TestGauge.SetDuration;
+  Sleep(10);
+  Children.SetDuration;
+
+  AssertTrue('Must be greater or equal to 0.01', TestGauge.GetMetric >= 0.01);
+  AssertTrue('Must be less than 0.02', TestGauge.GetMetric < 0.02);
+  AssertTrue('Children must be greater or equal to 0.03', Children.GetMetric >= 0.03);
+  AssertTrue('Children must be less than 0.04', Children.GetMetric < 0.04);
 end;
 
 initialization
