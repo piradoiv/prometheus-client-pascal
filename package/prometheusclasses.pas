@@ -86,15 +86,34 @@ type
     function WithLabels(LabelArray: array of const): TPrometheusGaugeChildren;
   end;
 
+  { TPrometheusBucket }
+
+  TPrometheusBucket = packed record
+    UpperInclusiveBound: double;
+    Counter: integer;
+  end;
+
+  { TPrometheusBucketResult }
+
+  TPrometheusBucketResult = packed record
+    BucketCounters: array of TPrometheusBucket;
+    TotalSum: double;
+    Counter: integer;
+  end;
+
   { TPrometheusHistogramChildren }
 
   TPrometheusHistogramChildren = class
+  const
+    DEFAULT_BUCKETS: array[1..11] of double =
+      (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10);
   private
-    Value: double;
+    Value: TPrometheusBucketResult;
   public
     Key: string;
+    constructor Create;
     procedure Observe(Amount: double = 1);
-    function GetMetric: double;
+    function GetMetric: TPrometheusBucketResult;
   end;
 
   { TPrometheusHistogram }
@@ -102,7 +121,7 @@ type
   TPrometheusHistogram = class(TPrometheusCollector)
   public
     procedure Observe(Amount: double = 1);
-    function GetMetric: double;
+    function GetMetric: TPrometheusBucketResult;
     function WithLabels(LabelArray: array of const): TPrometheusHistogramChildren;
   end;
 
@@ -112,16 +131,16 @@ implementation
 
 procedure TPrometheusHistogram.Observe(Amount: double);
 begin
-
+  WithLabels([]).Observe(Amount);
 end;
 
-function TPrometheusHistogram.GetMetric: double;
+function TPrometheusHistogram.GetMetric: TPrometheusBucketResult;
 begin
 
 end;
 
-function TPrometheusHistogram.WithLabels(LabelArray: array of const):
-TPrometheusHistogramChildren;
+function TPrometheusHistogram.WithLabels(LabelArray: array of
+  const): TPrometheusHistogramChildren;
 var
   Key: string;
   Index: integer;
@@ -139,14 +158,34 @@ end;
 
 { TPrometheusHistogramChildren }
 
-procedure TPrometheusHistogramChildren.Observe(Amount: double);
+constructor TPrometheusHistogramChildren.Create;
+var
+  I: integer;
 begin
-
+  Value.TotalSum := 0;
+  Value.Counter := 0;
+  SetLength(Value.BucketCounters, Length(DEFAULT_BUCKETS));
+  for I := Low(Value.BucketCounters) to High(Value.BucketCounters) do
+  begin
+    Value.BucketCounters[I].UpperInclusiveBound := DEFAULT_BUCKETS[I + 1];
+    Value.BucketCounters[I].Counter := 0;
+  end;
 end;
 
-function TPrometheusHistogramChildren.GetMetric: double;
+procedure TPrometheusHistogramChildren.Observe(Amount: double);
+var
+  I: integer;
 begin
+  Inc(Value.Counter);
+  Value.TotalSum := Value.TotalSum + Amount;
+  for I := Low(Value.BucketCounters) to High(Value.BucketCounters) do
+    if Amount <= Value.BucketCounters[I].UpperInclusiveBound then
+      Inc(Value.BucketCounters[I].Counter);
+end;
 
+function TPrometheusHistogramChildren.GetMetric: TPrometheusBucketResult;
+begin
+  Result := Value;
 end;
 
 { TPrometheusGaugeChildren }
