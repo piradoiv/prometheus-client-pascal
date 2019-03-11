@@ -123,6 +123,7 @@ type
     procedure Observe(Amount: double = 1);
     function GetMetric: TPrometheusBucketResult;
     function WithLabels(LabelArray: array of const): TPrometheusHistogramChildren;
+    function Expose: string;
   end;
 
 implementation
@@ -154,6 +155,44 @@ begin
     Result.Key := Key;
     Index := Storage.Add(Key, Result);
   end;
+end;
+
+function TPrometheusHistogram.Expose: string;
+var
+  Lines: TStringList;
+  MetricName: string;
+  I, J: integer;
+  Children: TPrometheusHistogramChildren;
+  BucketName: string;
+  BucketCounter: integer;
+begin
+  Lines := TStringList.Create;
+  Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
+  if Description <> '' then
+    Lines.Add(Format('# HELP %s %s', [Name, Description]));
+
+  for I := 0 to Storage.Count - 1 do
+  begin
+    Children := TPrometheusHistogramChildren(Storage.Items[I]);
+    for J := 1 to High(Children.GetMetric.BucketCounters) do
+    begin
+      BucketName := Format('%f', [Children.GetMetric.BucketCounters[J].UpperInclusiveBound]);
+      BucketCounter := Children.GetMetric.BucketCounters[J].Counter;
+      MetricName := GetMetricName(Storage.NameOfIndex(I));
+      MetricName := StringReplace(MetricName, '}', Format(', le="%s"}', [BucketName]), []);
+      Lines.Add(Format('%s %d', [MetricName, BucketCounter]));
+    end;
+
+    MetricName := GetMetricName(Storage.NameOfIndex(I));
+    MetricName := StringReplace(MetricName, '}', ', le="+Inf"}', []);
+    Lines.Add(Format('%s %d', [MetricName, Children.GetMetric.Counter]));
+    MetricName := GetMetricName(Storage.NameOfIndex(I));
+    Lines.Add(Format('%s %f', [StringReplace(MetricName, '{', '_sum{', []), Children.GetMetric.TotalSum]));
+    Lines.Add(Format('%s %d', [StringReplace(MetricName, '{', '_count{', []), Children.GetMetric.Counter]));
+  end;
+
+  Result := Lines.Text;
+  Lines.Free;
 end;
 
 { TPrometheusHistogramChildren }
@@ -429,6 +468,7 @@ begin
   case Self.ToString of
     'TPrometheusCounter': Result := 'counter';
     'TPrometheusGauge': Result := 'gauge';
+    'TPrometheusHistogram': Result := 'histogram';
   end;
 end;
 
