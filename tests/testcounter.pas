@@ -22,11 +22,11 @@ type
     procedure TestCanGetOptions;
     procedure TestSetCounterAmount;
     procedure TestCanIncreaseAmount;
-    procedure TestCanCreateCounterWithLabels;
     procedure TestCanIncreaseAmountForSpecificLabels;
     procedure TestShouldThrowAnExceptionWithNegativeArguments;
     procedure TestCanGetWithLabelsChildren;
     procedure TestCanIncreaseAmountOnChildren;
+    procedure TestMetricNamesAreBeingVerified;
     procedure TestLabelNamesAreBeingVerified;
   end;
 
@@ -69,23 +69,11 @@ begin
   AssertEquals(6, TestCounter.GetMetric);
 end;
 
-procedure TTestCounter.TestCanCreateCounterWithLabels;
-var
-  Counter: TPrometheusCounter;
-begin
-  Counter := TPrometheusCounter.Create('test', 'Test counter',
-    ['foo', 'bar', 'baz']);
-
-  AssertEquals('test', Counter.Name);
-  AssertEquals('Test counter', Counter.Description);
-  Counter.Free;
-end;
-
 procedure TTestCounter.TestCanIncreaseAmountForSpecificLabels;
 var
   Counter: TPrometheusCounter;
 begin
-  Counter := TPrometheusCounter.Create('test', ['datacenter', 'job']);
+  Counter := TPrometheusCounter.Create('test', 'help');
   Counter.WithLabels(['job', 'test', 'datacenter', 'eu1']).Inc(10);
   Counter.WithLabels(['datacenter', 'eu2', 'job', 'test']).Inc(5);
 
@@ -136,9 +124,64 @@ begin
 end;
 
 {******************************************************************************
+It may contain ASCII letters and digits, as well as underscores and colons.
+It must match the regex [a-zA-Z_:][a-zA-Z0-9_:]*.
+https://prometheus.io/docs/concepts/data_model/
+*******************************************************************************}
+procedure TTestCounter.TestMetricNamesAreBeingVerified;
+var
+  ValidNames, InvalidNames: TStringList;
+  I: integer;
+  Counter: TPrometheusCounter;
+begin
+  ValidNames := TStringList.Create;
+  with ValidNames do
+  begin
+    Add('IAMVALID');
+    Add('abc_DE:F_ghi_1234');
+    Add('I_AM_VA:LID');
+    Add('i_am_valid');
+  end;
+
+  for I := 0 to ValidNames.Count - 1 do
+  begin
+    try
+      Counter := TPrometheusCounter.Create(ValidNames.Strings[I], 'true');
+      Counter.Free;
+    except
+      Fail(Format('''%s'' should be a valid string', [ValidNames.Strings[I]]));
+    end;
+  end;
+
+  InvalidNames := TStringList.Create;
+  with InvalidNames do
+  begin
+    Add('i n v a l i d');
+    Add('__invalid');
+    Add('ñot-valid');
+    Add('not-VALID');
+  end;
+
+  for I := 0 to InvalidNames.Count - 1 do
+  begin
+    try
+      Counter := TPrometheusCounter.Create(InvalidNames.Strings[I], 'Description');
+      Fail(Format('''%s'' should not be a valid string', [InvalidNames.Strings[I]]));
+    except
+      on E: Exception do
+        AssertEquals('Invalid metric name found', E.Message);
+    end;
+  end;
+
+  ValidNames.Free;
+  InvalidNames.Free;
+end;
+
+{******************************************************************************
 Label names may contain ASCII letters, numbers, as well as underscores.
 They must match the regex [a-zA-Z_][a-zA-Z0-9_]*. Label names beginning
 with __ are reserved for internal use.
+https://prometheus.io/docs/concepts/data_model/
 *******************************************************************************}
 procedure TTestCounter.TestLabelNamesAreBeingVerified;
 var

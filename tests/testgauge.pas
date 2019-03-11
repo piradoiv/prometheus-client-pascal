@@ -31,7 +31,7 @@ implementation
 
 procedure TTestGauge.SetUp;
 begin
-  TestGauge := TPrometheusGauge.Create('test', 'help', ['foo', 'bar']);
+  TestGauge := TPrometheusGauge.Create('test', 'help');
 end;
 
 procedure TTestGauge.TearDown;

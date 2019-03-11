@@ -19,6 +19,7 @@ type
   protected
     Opts: TPrometheusOpts;
     Storage: TFPHashObjectList;
+    procedure ValidateMetricName(Name: string);
     procedure ValidateLabelName(Name: string);
     procedure BuildStorage;
     function GetKeyFromLabels(LabelArray: array of const): string;
@@ -27,8 +28,6 @@ type
   public
     constructor Create(Options: TPrometheusOpts);
     constructor Create(Name: string; Description: string);
-    constructor Create(Name: string; Description: string; Labels: array of const);
-    constructor Create(Name: string; Labels: array of const);
     destructor Destroy; override;
     function Expose: string;
   published
@@ -118,7 +117,7 @@ end;
 
 procedure TPrometheusGaugeChildren.SetDuration;
 var
-  CurrentUnixMilliseconds: Double;
+  CurrentUnixMilliseconds: double;
 begin
   CurrentUnixMilliseconds := DateTimeToUnix(Now) + (MillisecondOf(Now) / 1000);
   SetAmount(CurrentUnixMilliseconds - TimerStartTime);
@@ -234,6 +233,22 @@ end;
 
 { TPrometheusCollector }
 
+procedure TPrometheusCollector.ValidateMetricName(Name: string);
+var
+  Regex: TRegExpr;
+  Valid: boolean;
+begin
+  if AnsiStartsStr('__', Name) then
+    raise Exception.Create('Invalid metric name found');
+
+  Regex := TRegExpr.Create;
+  Regex.Expression := '^[a-zA-Z_:][a-zA-Z0-9_:]*$';
+  Valid := Regex.Exec(Name);
+  Regex.Free;
+  if not Valid then
+    raise Exception.Create('Invalid metric name found');
+end;
+
 procedure TPrometheusCollector.ValidateLabelName(Name: string);
 var
   Found: boolean;
@@ -317,6 +332,7 @@ end;
 
 constructor TPrometheusCollector.Create(Options: TPrometheusOpts);
 begin
+  ValidateMetricName(Options.Name);
   Opts := Options;
   BuildStorage;
 end;
@@ -330,27 +346,13 @@ begin
   Create(Options);
 end;
 
-constructor TPrometheusCollector.Create(Name: string; Description: string;
-  Labels: array of const);
-var
-  Options: TPrometheusOpts;
-begin
-  Options.Name := Name;
-  Options.Description := Description;
-  Create(Options);
-end;
-
-constructor TPrometheusCollector.Create(Name: string; Labels: array of const);
-begin
-  Create(Name, '', Labels);
-end;
-
 destructor TPrometheusCollector.Destroy;
-var
-  I: integer;
 begin
-  Storage.Clear;
-  Storage.Free;
+  if Assigned(Storage) then
+  begin
+    Storage.Clear;
+    Storage.Free;
+  end;
   inherited Destroy;
 end;
 
