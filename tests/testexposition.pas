@@ -59,8 +59,8 @@ begin
     Add('# TYPE http_requests_total counter');
     Add('# HELP http_requests_total The total number of HTTP requests');
     Add('http_requests_total 1030');
-    Add('http_requests_total{code="200",method="post"} 1027');
-    Add('http_requests_total{code="400",method="post"} 3');
+    Add('http_requests_total{code="200", method="post"} 1027');
+    Add('http_requests_total{code="400", method="post"} 3');
   end;
 
   ActualList := TStringList.Create;

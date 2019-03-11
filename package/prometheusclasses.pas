@@ -300,6 +300,7 @@ function TPrometheusCollector.GetMetricName(LabelString: string): string;
 var
   LabelList, ConvertedList: TStringList;
   I: integer;
+  Labels: string;
 begin
   LabelList := TStringList.Create;
   LabelList.Sorted := True;
@@ -314,7 +315,8 @@ begin
     ConvertedList.Values[LabelList.Names[I]] :=
       Format('"%s"', [LabelList.ValueFromIndex[I]]);
 
-  Result := Format('%s{%s}', [Name, ConvertedList.DelimitedText]);
+  Labels := StringReplace(ConvertedList.DelimitedText, ',', ', ', [rfReplaceAll]);
+  Result := Format('%s{%s}', [Name, Labels]);
   if ConvertedList.DelimitedText = '' then
     Result := Name;
 
