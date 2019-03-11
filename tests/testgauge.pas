@@ -19,7 +19,6 @@ type
     procedure TearDown; override;
   published
     procedure TestHookUp;
-    procedure TestCanCreateWithLabels;
     procedure TestCanIncreaseAmount;
     procedure TestCanDecreaseAmount;
     procedure TestCanIncreaseAndDecreaseAmountsForSpecificLabels;
@@ -43,11 +42,6 @@ end;
 procedure TTestGauge.TestHookUp;
 begin
   AssertEquals('test', TestGauge.Name);
-end;
-
-procedure TTestGauge.TestCanCreateWithLabels;
-begin
-  AssertEquals(2, TestGauge.Labels.Count);
 end;
 
 procedure TTestGauge.TestCanIncreaseAmount;

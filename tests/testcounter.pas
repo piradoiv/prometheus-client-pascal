@@ -70,23 +70,28 @@ begin
 end;
 
 procedure TTestCounter.TestCanCreateCounterWithLabels;
+var
+  Counter: TPrometheusCounter;
 begin
-  TestCounter := TPrometheusCounter.Create('test', 'Test counter',
+  Counter := TPrometheusCounter.Create('test', 'Test counter',
     ['foo', 'bar', 'baz']);
 
-  AssertEquals('test', TestCounter.Name);
-  AssertEquals('Test counter', TestCounter.Description);
-  AssertEquals(3, TestCounter.Labels.Count);
+  AssertEquals('test', Counter.Name);
+  AssertEquals('Test counter', Counter.Description);
+  Counter.Free;
 end;
 
 procedure TTestCounter.TestCanIncreaseAmountForSpecificLabels;
+var
+  Counter: TPrometheusCounter;
 begin
-  TestCounter := TPrometheusCounter.Create('test', ['datacenter', 'job']);
-  TestCounter.WithLabels(['job', 'test', 'datacenter', 'eu1']).Inc(10);
-  TestCounter.WithLabels(['datacenter', 'eu2', 'job', 'test']).Inc(5);
+  Counter := TPrometheusCounter.Create('test', ['datacenter', 'job']);
+  Counter.WithLabels(['job', 'test', 'datacenter', 'eu1']).Inc(10);
+  Counter.WithLabels(['datacenter', 'eu2', 'job', 'test']).Inc(5);
 
-  AssertEquals(10, TestCounter.WithLabels(['datacenter', 'eu1', 'job', 'test']).GetMetric);
-  AssertEquals(5, TestCounter.WithLabels(['datacenter', 'eu2', 'job', 'test']).GetMetric);
+  AssertEquals(10, Counter.WithLabels(['datacenter', 'eu1', 'job', 'test']).GetMetric);
+  AssertEquals(5, Counter.WithLabels(['datacenter', 'eu2', 'job', 'test']).GetMetric);
+  Counter.Free;
 end;
 
 procedure TTestCounter.TestShouldThrowAnExceptionWithNegativeArguments;
@@ -130,8 +135,59 @@ begin
   AssertEquals(0, TestCounter.WithLabels(['foo', 'nope']).GetMetric);
 end;
 
+{******************************************************************************
+Label names may contain ASCII letters, numbers, as well as underscores.
+They must match the regex [a-zA-Z_][a-zA-Z0-9_]*. Label names beginning
+with __ are reserved for internal use.
+*******************************************************************************}
+procedure TTestCounter.TestLabelNamesAreBeingVerified;
+var
+  ValidLabels, InvalidLabels: TStringList;
+  I: integer;
+begin
+  ValidLabels := TStringList.Create;
+  with ValidLabels do
+  begin
+    Add('IAMVALID');
+    Add('abc_DEF_ghi_1234');
+    Add('I_AM_VALID');
+    Add('i_am_valid');
+  end;
+
+  for I := 0 to ValidLabels.Count - 1 do
+  begin
+    try
+      TestCounter.WithLabels([ValidLabels.Strings[I], 'true']);
+    except
+      Fail(Format('''%s'' should be a valid string', [ValidLabels.Strings[I]]));
+    end;
+  end;
+
+  InvalidLabels := TStringList.Create;
+  with InvalidLabels do
+  begin
+    Add('i n v a l i d');
+    Add('__invalid');
+    Add('ñot-valid');
+    Add('not-VALID');
+  end;
+
+  for I := 0 to InvalidLabels.Count - 1 do
+  begin
+    try
+      TestCounter.WithLabels([InvalidLabels.Strings[I], 'true']);
+      Fail(Format('''%s'' should not be a valid string', [InvalidLabels.Strings[I]]));
+    except
+      on E: Exception do
+        AssertEquals('Invalid label name found', E.Message);
+    end;
+  end;
+
+  ValidLabels.Free;
+  InvalidLabels.Free;
+end;
+
 initialization
 
   RegisterTest(TTestCounter);
 end.
-

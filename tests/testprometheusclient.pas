@@ -69,6 +69,7 @@ begin
   AssertTrue(Registry.Exists(Counter.Name));
   Registry.Unregister(Counter.Name);
   AssertFalse(Registry.Exists(Counter.Name));
+  Counter.Free;
 end;
 
 procedure TTestPrometheusClient.TestCanGetCollector;

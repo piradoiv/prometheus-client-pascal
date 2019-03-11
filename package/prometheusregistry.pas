@@ -32,11 +32,15 @@ constructor TPrometheusRegistry.Create;
 begin
   Storage := TStringList.Create;
   Storage.Sorted := True;
-  Storage.OwnsObjects := True;
+  Storage.OwnsObjects := False;
 end;
 
 destructor TPrometheusRegistry.Destroy;
+var
+  I: integer;
 begin
+  for I := Storage.Count - 1 downto 0 do
+    Storage.Objects[I].Free;
   Storage.Free;
   inherited Destroy;
 end;
@@ -54,7 +58,10 @@ var
   Index: integer;
 begin
   if Storage.Find(Name, Index) then
-    Storage.Delete(Index);
+  begin
+    if Assigned(Storage.Objects[Index]) then
+      Storage.Delete(Index);
+  end;
 end;
 
 function TPrometheusRegistry.Counter(Name: string; Help: string): TPrometheusCounter;

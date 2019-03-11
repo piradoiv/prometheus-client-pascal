@@ -5,13 +5,12 @@ unit PrometheusClasses;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, StrUtils, contnrs;
+  Classes, SysUtils, DateUtils, StrUtils, contnrs, Regexpr;
 
 type
   TPrometheusOpts = packed record
     Name: string;
     Description: string;
-    Labels: TStringList;
   end;
 
   { TPrometheusCollector }
@@ -19,8 +18,9 @@ type
   TPrometheusCollector = class
   protected
     Opts: TPrometheusOpts;
-    FLabels: TStringList;
     Storage: TFPHashObjectList;
+    procedure ValidateLabelName(Name: string);
+    procedure BuildStorage;
     function GetKeyFromLabels(LabelArray: array of const): string;
     function GetMetricName(LabelString: string): string;
     function GetMetricType: string;
@@ -34,7 +34,6 @@ type
   published
     property Name: string read Opts.Name;
     property Description: string read Opts.Description;
-    property Labels: TStringList read Opts.Labels;
   end;
 
   { TPrometheusCounterChildren }
@@ -235,25 +234,51 @@ end;
 
 { TPrometheusCollector }
 
+procedure TPrometheusCollector.ValidateLabelName(Name: string);
+var
+  Found: boolean;
+  Regex: TRegExpr;
+begin
+  if AnsiStartsStr('__', Name) then
+    raise Exception.Create('Invalid label name found');
+
+  Regex := TRegExpr.Create;
+  Regex.Expression := '^[a-zA-Z_][a-zA-Z0-9_]*$';
+  Found := Regex.Exec(Name);
+  Regex.Free;
+  if not Found then
+    raise Exception.Create('Invalid label name found');
+end;
+
+procedure TPrometheusCollector.BuildStorage;
+begin
+  Storage := TFPHashObjectList.Create(True);
+end;
+
 function TPrometheusCollector.GetKeyFromLabels(LabelArray: array of const): string;
 var
+  LabelName: string;
   LabelList: TStringList;
   I: integer;
 begin
   LabelList := TStringList.Create;
-  LabelList.Sorted := True;
-  LabelList.Delimiter := '|';
-  LabelList.NameValueSeparator := ':';
+  try
+    LabelList.Sorted := True;
+    LabelList.Delimiter := '|';
+    LabelList.NameValueSeparator := ':';
 
-  for I := Low(LabelArray) to High(LabelArray) do
-  begin
-    if I mod 2 <> 0 then
-      Continue;
-    LabelList.Values[ansistring(LabelArray[I].VAnsiString)] :=
-      ansistring(LabelArray[I + 1].VAnsiString);
+    for I := Low(LabelArray) to High(LabelArray) do
+    begin
+      if I mod 2 <> 0 then
+        Continue;
+      LabelName := ansistring(LabelArray[I].VAnsiString);
+      ValidateLabelName(LabelName);
+      LabelList.Values[LabelName] := ansistring(LabelArray[I + 1].VAnsiString);
+    end;
+    Result := LabelList.DelimitedText;
+  finally
+    LabelList.Free;
   end;
-  Result := LabelList.DelimitedText;
-  LabelList.Free;
 end;
 
 function TPrometheusCollector.GetMetricName(LabelString: string): string;
@@ -277,6 +302,9 @@ begin
   Result := Format('%s{%s}', [Name, ConvertedList.DelimitedText]);
   if ConvertedList.DelimitedText = '' then
     Result := Name;
+
+  LabelList.Free;
+  ConvertedList.Free;
 end;
 
 function TPrometheusCollector.GetMetricType: string;
@@ -289,12 +317,8 @@ end;
 
 constructor TPrometheusCollector.Create(Options: TPrometheusOpts);
 begin
-  if not Assigned(Options.Labels) then
-    Options.Labels := TStringList.Create;
   Opts := Options;
-  FLabels := TStringList.Create;
-  Storage := TFPHashObjectList.Create;
-  Storage.OwnsObjects := True;
+  BuildStorage;
 end;
 
 constructor TPrometheusCollector.Create(Name: string; Description: string);
@@ -310,14 +334,9 @@ constructor TPrometheusCollector.Create(Name: string; Description: string;
   Labels: array of const);
 var
   Options: TPrometheusOpts;
-  I: integer;
 begin
   Options.Name := Name;
   Options.Description := Description;
-  Options.Labels := TStringList.Create;
-  for I := Low(Labels) to High(Labels) do
-    Options.Labels.Add(ansistring(Labels[I].VAnsiString));
-
   Create(Options);
 end;
 
@@ -327,8 +346,10 @@ begin
 end;
 
 destructor TPrometheusCollector.Destroy;
+var
+  I: integer;
 begin
-  FLabels.Free;
+  Storage.Clear;
   Storage.Free;
   inherited Destroy;
 end;
