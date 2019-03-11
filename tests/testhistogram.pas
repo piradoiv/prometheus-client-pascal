@@ -42,9 +42,15 @@ begin
 end;
 
 procedure TTestHistogram.TestCanObserveResult;
+const
+  // Default Buckets: (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10)
+  EXPECTED_RESULTS: array[1..11] of integer = (0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2);
 var
   Child: TPrometheusHistogramChildren;
   I: integer;
+  Message: string;
+  UpperBound: double;
+  Expected, Actual: integer;
 begin
   Child := Histogram.WithLabels(['hello', 'world']);
   Child.Observe(5);
@@ -53,13 +59,17 @@ begin
   AssertEquals(2, Child.GetMetric.Counter);
   AssertEquals(10, Child.GetMetric.TotalSum);
   AssertEquals(11, Length(Child.GetMetric.BucketCounters));
-  AssertEquals(0, Child.GetMetric.BucketCounters[8].Counter);
-  AssertEquals(2, Child.GetMetric.BucketCounters[9].Counter);
-  AssertEquals(2, Child.GetMetric.BucketCounters[10].Counter);
+  for I := Low(Child.GetMetric.BucketCounters) to High(Child.GetMetric.BucketCounters) do
+  begin
+    Expected := EXPECTED_RESULTS[I + 1];
+    UpperBound := Child.GetMetric.BucketCounters[I].UpperInclusiveBound;
+    Actual := Child.GetMetric.BucketCounters[I].Counter;
+    Message := Format('%f must be %d and it was %d', [UpperBound, Expected, Actual]);
+    AssertEquals(Message, Expected, Actual);
+  end;
 end;
 
 initialization
 
   RegisterTest(TTestHistogram);
 end.
-
