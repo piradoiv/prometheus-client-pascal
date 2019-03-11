@@ -11,4 +11,4 @@ This library is in an alpha stage and is not intended for production use yet. Yo
 - Counter ⚠️ Partially implemented
 - Gauge ⚠️ Partially implemented
 - Summary ❌ Not implemented yet
-- Histogram ❌ Not implemented yet
+- Histogram ⚠️ Partially implemented
