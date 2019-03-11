@@ -86,7 +86,68 @@ type
     function WithLabels(LabelArray: array of const): TPrometheusGaugeChildren;
   end;
 
+  { TPrometheusHistogramChildren }
+
+  TPrometheusHistogramChildren = class
+  private
+    Value: double;
+  public
+    Key: string;
+    procedure Observe(Amount: double = 1);
+    function GetMetric: double;
+  end;
+
+  { TPrometheusHistogram }
+
+  TPrometheusHistogram = class(TPrometheusCollector)
+  public
+    procedure Observe(Amount: double = 1);
+    function GetMetric: double;
+    function WithLabels(LabelArray: array of const): TPrometheusHistogramChildren;
+  end;
+
 implementation
+
+{ TPrometheusHistogram }
+
+procedure TPrometheusHistogram.Observe(Amount: double);
+begin
+
+end;
+
+function TPrometheusHistogram.GetMetric: double;
+begin
+
+end;
+
+function TPrometheusHistogram.WithLabels(LabelArray: array of const):
+TPrometheusHistogramChildren;
+var
+  Key: string;
+  Index: integer;
+begin
+  Key := GetKeyFromLabels(LabelArray);
+  Index := Storage.FindIndexOf(Key);
+
+  if Index < 0 then
+  begin
+    Result := TPrometheusHistogramChildren.Create;
+    Result.Key := Key;
+    Index := Storage.Add(Key, Result);
+  end;
+end;
+
+{ TPrometheusHistogramChildren }
+
+procedure TPrometheusHistogramChildren.Observe(Amount: double);
+begin
+
+end;
+
+function TPrometheusHistogramChildren.GetMetric: double;
+begin
+
+end;
 
 { TPrometheusGaugeChildren }
 

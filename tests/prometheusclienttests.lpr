@@ -9,6 +9,7 @@ uses
   TestCounter,
   TestGauge,
   TestExposition,
+  TestHistogram,
   fpcunit,
   fpcunitreport;
 
