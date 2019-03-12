@@ -23,6 +23,7 @@ type
     procedure TestCanObserveResult;
     procedure TestCanObserveResultWithLabels;
     procedure TestSomeLabelNamesAreBeingForbidded;
+    procedure TestCanCreateHistogramsWithSpecificBuckets;
   end;
 
 implementation
@@ -90,11 +91,24 @@ begin
 end;
 
 procedure TTestHistogram.TestSomeLabelNamesAreBeingForbidded;
-var
-  Child: TPrometheusHistogramChildren;
 begin
-  Self.ExpectException('Exception must be thrown', Exception, 'Label with name "le" is not permitted');
-  Child := Histogram.WithLabels(['le', 'nope']);
+  Self.ExpectException('Exception must be thrown', Exception,
+    'Label with name "le" is not permitted');
+  Histogram.WithLabels(['le', 'nope']);
+end;
+
+procedure TTestHistogram.TestCanCreateHistogramsWithSpecificBuckets;
+var
+  I: integer;
+  CustomBuckets: array[0..4] of double = (5, 10, 15, 20, 25);
+begin
+  with TPrometheusHistogram.Create('foo', 'bar') do
+  begin
+    SetBuckets(CustomBuckets);
+    for I := Low(GetMetric.BucketCounters) to High(GetMetric.BucketCounters) do
+      AssertEquals(CustomBuckets[I], GetMetric.BucketCounters[I].UpperInclusiveBound);
+    Free;
+  end;
 end;
 
 initialization

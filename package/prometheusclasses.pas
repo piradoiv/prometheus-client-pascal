@@ -50,6 +50,9 @@ type
     Counter: integer;
   end;
 
+  { TPrometheusCustomBuckets }
+  TPrometheusCustomBuckets = array of double;
+
 implementation
 
 { TPrometheusCustomCollector }
