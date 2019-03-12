@@ -5,7 +5,8 @@ unit PrometheusRegistry;
 interface
 
 uses
-  Classes, SysUtils, PrometheusClasses, PrometheusCounter, PrometheusGauge;
+  Classes, SysUtils, PrometheusClasses, PrometheusCounter, PrometheusGauge,
+  PrometheusHistogram;
 
 type
 
@@ -19,8 +20,9 @@ type
     destructor Destroy; override;
     procedure Register(Metric: TPrometheusCustomCollector);
     procedure Unregister(Name: string);
-    function Counter(Name: string; Help: string = ''): TPrometheusCounter;
-    function Gauge(Name: string; Help: string = ''): TPrometheusGauge;
+    function Counter(Name: string; Help: string): TPrometheusCounter;
+    function Gauge(Name: string; Help: string): TPrometheusGauge;
+    function Histogram(Name: string; Help: string): TPrometheusHistogram;
     function Exists(Name: string): boolean;
     function Get(Name: string): TPrometheusCustomCollector;
     function Expose: string;
@@ -73,6 +75,12 @@ end;
 function TPrometheusRegistry.Gauge(Name: string; Help: string): TPrometheusGauge;
 begin
   Result := TPrometheusGauge.Create(Name, Help);
+  Register(Result);
+end;
+
+function TPrometheusRegistry.Histogram(Name: string; Help: string): TPrometheusHistogram;
+begin
+  Result := TPrometheusHistogram.Create(Name, Help);
   Register(Result);
 end;
 

@@ -162,8 +162,8 @@ var
   ExpectedList, ActualList: TStringList;
   Expected, Actual: string;
 begin
-  Counter1 := Prometheus.Counter('counter1');
-  Counter2 := Prometheus.Counter('counter2');
+  Counter1 := Prometheus.Counter('counter1', 'help1');
+  Counter2 := Prometheus.Counter('counter2', 'help2');
 
   Counter1.Inc(10);
   Counter2.Inc(100);
@@ -174,9 +174,11 @@ begin
   with ExpectedList do
   begin
     Add('# TYPE counter1 counter');
+    Add('# HELP counter1 help1');
     Add('counter1 10');
     Add('');
     Add('# TYPE counter2 counter');
+    Add('# HELP counter2 help2');
     Add('counter2 100');
     Add('');
   end;
