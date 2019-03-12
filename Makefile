@@ -4,6 +4,12 @@ test: build-tests
 build-tests: clean
 	fpc -Sa -Fupackage tests/prometheusclienttests.lpr
 
+test-leaks: build-tests-with-gh
+	./tests/prometheusclienttests -a --format=plain
+
+build-tests-with-gh: clean
+	fpc -gh -Sa -Fupackage tests/prometheusclienttests.lpr
+
 clean:
 	rm -f tests/prometheusclienttests
 	rm -rf tests/lib
