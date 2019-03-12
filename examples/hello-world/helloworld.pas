@@ -3,7 +3,8 @@ program helloworld;
 uses
   SysUtils,
   PrometheusRegistry,
-  PrometheusClasses;
+  PrometheusCounter,
+  PrometheusGauge;
 
 var
   Registry: TPrometheusRegistry;
