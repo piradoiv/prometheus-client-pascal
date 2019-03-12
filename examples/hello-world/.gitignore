@@ -1,0 +1,4 @@
+**/*.o
+**/*.ppu
+**/*.lps
+/helloworld
