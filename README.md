@@ -2,7 +2,7 @@
 
 This is the [FreePascal](https://www.freepascal.org/) client library for [Prometheus](https://prometheus.io/), an open-source systems monitoring and alerting toolkit. Combined with [Grafana](https://grafana.com/), you'll be able to create dashboards and see what's happening inside your application.
 
-![Prometheus with Grafana](img/grafana-prometheus.png)
+![Prometheus with Grafana](https://github.com/piradoiv/prometheus-client-pascal/blob/master/img/grafana_prometheus.png?raw=true)
 
 This library just collects data, you'll need a running Prometheus server to extract, query and monitor it. As of 2016, Prometheus lives under the umbrella of [Cloud Native Computing Foundation](https://www.cncf.io/).
 
