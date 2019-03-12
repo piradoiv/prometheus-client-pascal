@@ -8,7 +8,7 @@ As of 2016, Prometheus lives under the umbrella of [Cloud Native Computing Found
 
 This library just collects data, you'll need a running Prometheus server to extract, query and monitor it.
 
-Usage examples will be provided in this README soon, but you can take a look to the [tests folder](./tests) in the meantime.
+Usage examples can be found under [examples](./examples) folder.
 
 ## Implementation status
 
