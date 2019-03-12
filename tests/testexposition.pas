@@ -5,7 +5,8 @@ unit TestExposition;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, PrometheusRegistry, PrometheusClasses;
+  Classes, SysUtils, fpcunit, testregistry, PrometheusRegistry,
+  PrometheusClasses, PrometheusCounter, PrometheusGauge, PrometheusHistogram;
 
 type
 

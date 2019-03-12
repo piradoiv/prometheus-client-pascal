@@ -12,15 +12,27 @@
     </CompilerOptions>
     <Description Value="Prometheus Client for FreePascal"/>
     <License Value="MIT"/>
-    <Files Count="2">
+    <Files Count="5">
       <Item1>
         <Filename Value="prometheusregistry.pas"/>
         <UnitName Value="PrometheusRegistry"/>
       </Item1>
       <Item2>
         <Filename Value="prometheusclasses.pas"/>
-        <UnitName Value="prometheusclasses"/>
+        <UnitName Value="PrometheusClasses"/>
       </Item2>
+      <Item3>
+        <Filename Value="prometheuscounter.pas"/>
+        <UnitName Value="PrometheusCounter"/>
+      </Item3>
+      <Item4>
+        <Filename Value="prometheusgauge.pas"/>
+        <UnitName Value="PrometheusGauge"/>
+      </Item4>
+      <Item5>
+        <Filename Value="prometheushistogram.pas"/>
+        <UnitName Value="prometheushistogram"/>
+      </Item5>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>

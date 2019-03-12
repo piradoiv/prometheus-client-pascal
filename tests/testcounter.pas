@@ -5,7 +5,7 @@ unit TestCounter;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, PrometheusClasses;
+  Classes, SysUtils, fpcunit, testregistry, PrometheusClasses, PrometheusCounter;
 
 type
 
@@ -55,18 +55,18 @@ end;
 
 procedure TTestCounter.TestSetCounterAmount;
 begin
-  AssertEquals(0, TestCounter.GetMetric);
+  AssertEquals(0, TestCounter.GetMetricAsDouble);
   TestCounter.Inc(42);
-  AssertEquals(42, TestCounter.GetMetric);
+  AssertEquals(42, TestCounter.GetMetricAsDouble);
 end;
 
 procedure TTestCounter.TestCanIncreaseAmount;
 begin
-  AssertEquals(0, TestCounter.GetMetric);
+  AssertEquals(0, TestCounter.GetMetricAsDouble);
   TestCounter.Inc;
-  AssertEquals(1, TestCounter.GetMetric);
+  AssertEquals(1, TestCounter.GetMetricAsDouble);
   TestCounter.Inc(5);
-  AssertEquals(6, TestCounter.GetMetric);
+  AssertEquals(6, TestCounter.GetMetricAsDouble);
 end;
 
 procedure TTestCounter.TestCanIncreaseAmountForSpecificLabels;
@@ -77,8 +77,8 @@ begin
   Counter.WithLabels(['job', 'test', 'datacenter', 'eu1']).Inc(10);
   Counter.WithLabels(['datacenter', 'eu2', 'job', 'test']).Inc(5);
 
-  AssertEquals(10, Counter.WithLabels(['datacenter', 'eu1', 'job', 'test']).GetMetric);
-  AssertEquals(5, Counter.WithLabels(['datacenter', 'eu2', 'job', 'test']).GetMetric);
+  AssertEquals(10, Counter.WithLabels(['datacenter', 'eu1', 'job', 'test']).GetMetricAsDouble);
+  AssertEquals(5, Counter.WithLabels(['datacenter', 'eu2', 'job', 'test']).GetMetricAsDouble);
   Counter.Free;
 end;
 
@@ -118,9 +118,9 @@ begin
   TestCounter.WithLabels(['foo', 'bar']).Inc(1);
   Children.Inc(40);
 
-  AssertEquals(42, TestCounter.WithLabels(['foo', 'bar']).GetMetric);
-  AssertEquals(42, Children.GetMetric);
-  AssertEquals(0, TestCounter.WithLabels(['foo', 'nope']).GetMetric);
+  AssertEquals(42, TestCounter.WithLabels(['foo', 'bar']).GetMetricAsDouble);
+  AssertEquals(42, Children.GetMetricAsDouble);
+  AssertEquals(0, TestCounter.WithLabels(['foo', 'nope']).GetMetricAsDouble);
 end;
 
 {******************************************************************************

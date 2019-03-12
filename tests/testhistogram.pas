@@ -5,7 +5,8 @@ unit TestHistogram;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, PrometheusClasses;
+  Classes, SysUtils, fpcunit, testregistry, PrometheusClasses,
+  PrometheusHistogram;
 
 type
 
@@ -58,7 +59,8 @@ begin
   AssertEquals(10, Histogram.GetMetric.TotalSum);
   AssertEquals(11, Length(Histogram.GetMetric.BucketCounters));
 
-  for I := Low(Histogram.GetMetric.BucketCounters) to High(Histogram.GetMetric.BucketCounters) do
+  for I := Low(Histogram.GetMetric.BucketCounters)
+    to High(Histogram.GetMetric.BucketCounters) do
   begin
     Expected := EXPECTED_RESULTS[I];
     UpperBound := Histogram.GetMetric.BucketCounters[I].UpperInclusiveBound;

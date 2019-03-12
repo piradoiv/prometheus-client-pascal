@@ -5,20 +5,20 @@ unit PrometheusClasses;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, StrUtils, contnrs, Regexpr;
+  Classes, SysUtils, StrUtils, contnrs, Regexpr;
 
 type
-  TPrometheusOpts = packed record
+  TPrometheusOptions = packed record
     Name: string;
     Description: string;
   end;
 
-  { TPrometheusCollector }
+  { TPrometheusCustomCollector }
 
-  TPrometheusCollector = class
+  TPrometheusCustomCollector = class(TObject)
   protected
-    Opts: TPrometheusOpts;
-    Storage: TFPHashObjectList;
+    FOptions: TPrometheusOptions;
+    FStorage: TFPHashObjectList;
     procedure ValidateMetricName(Name: string);
     procedure ValidateLabelName(Name: string);
     procedure BuildStorage;
@@ -26,64 +26,13 @@ type
     function GetMetricName(LabelString: string): string;
     function GetMetricType: string;
   public
-    constructor Create(Options: TPrometheusOpts);
+    constructor Create(Options: TPrometheusOptions);
     constructor Create(Name: string; Description: string);
     destructor Destroy; override;
-    function Expose: string;
+    function Expose: string; virtual; abstract;
   published
-    property Name: string read Opts.Name;
-    property Description: string read Opts.Description;
-  end;
-
-  { TPrometheusCounterChildren }
-
-  TPrometheusCounterChildren = class
-  private
-    Value: double;
-  public
-    Key: string;
-    procedure Inc(Amount: double = 1);
-    function GetMetric: double;
-  end;
-
-  { TPrometheusCounter }
-
-  TPrometheusCounter = class(TPrometheusCollector)
-  public
-    procedure Inc(Amount: double = 1);
-    function GetMetric: double;
-    function WithLabels(LabelArray: array of const): TPrometheusCounterChildren;
-  end;
-
-  { TPrometheusGaugeChildren }
-
-  TPrometheusGaugeChildren = class
-  private
-    Value: double;
-    TimerStartTime: double;
-  public
-    Key: string;
-    procedure Inc(Amount: double = 1);
-    procedure Dec(Amount: double = 1);
-    procedure SetAmount(Amount: double = 1);
-    procedure SetToCurrentTime;
-    procedure StartTimer;
-    procedure SetDuration;
-    function GetMetric: double;
-  end;
-
-  { TPrometheusGauge }
-
-  TPrometheusGauge = class(TPrometheusCollector)
-  public
-    procedure Inc(Amount: double = 1);
-    procedure Dec(Amount: double = 1);
-    procedure SetAmount(Amount: double = 1);
-    procedure SetToCurrentTime;
-    procedure StartTimer;
-    procedure SetDuration;
-    function GetMetric: double;
-    function WithLabels(LabelArray: array of const): TPrometheusGaugeChildren;
+    property Name: string read FOptions.Name;
+    property Description: string read FOptions.Description;
   end;
 
   { TPrometheusBucket }
@@ -101,275 +50,11 @@ type
     Counter: integer;
   end;
 
-  { TPrometheusHistogramChildren }
-
-  TPrometheusHistogramChildren = class
-  private
-    Value: TPrometheusBucketResult;
-  public
-    Key: string;
-    procedure Observe(Amount: double);
-    function GetMetric: TPrometheusBucketResult;
-  end;
-
-  { TPrometheusHistogram }
-
-  TPrometheusHistogram = class(TPrometheusCollector)
-  const
-    DEFAULT_BUCKETS: array[0..10] of double =
-      (0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10);
-  public
-    procedure Observe(Amount: double);
-    function GetMetric: TPrometheusBucketResult;
-    function WithLabels(LabelArray: array of const): TPrometheusHistogramChildren;
-    function Expose: string;
-  end;
-
 implementation
 
-{ TPrometheusHistogram }
+{ TPrometheusCustomCollector }
 
-procedure TPrometheusHistogram.Observe(Amount: double);
-begin
-  WithLabels([]).Observe(Amount);
-end;
-
-function TPrometheusHistogram.GetMetric: TPrometheusBucketResult;
-begin
-  Result := WithLabels([]).GetMetric;
-end;
-
-function TPrometheusHistogram.WithLabels(LabelArray: array of
-  const): TPrometheusHistogramChildren;
-var
-  Key: string;
-  I, Index: integer;
-begin
-  Key := GetKeyFromLabels(LabelArray);
-  Index := Storage.FindIndexOf(Key);
-
-  if Index < 0 then
-  begin
-    Result := TPrometheusHistogramChildren.Create;
-    Result.Key := Key;
-    Result.Value.TotalSum := 0;
-    Result.Value.Counter := 0;
-
-    SetLength(Result.Value.BucketCounters, Length(DEFAULT_BUCKETS));
-    for I := Low(Result.Value.BucketCounters) to High(Result.Value.BucketCounters) do
-    begin
-      Result.Value.BucketCounters[I].UpperInclusiveBound := DEFAULT_BUCKETS[I];
-      Result.Value.BucketCounters[I].Counter := 0;
-    end;
-
-    Index := Storage.Add(Key, Result);
-  end;
-
-  Result := TPrometheusHistogramChildren(Storage.Items[Index]);
-end;
-
-function TPrometheusHistogram.Expose: string;
-var
-  Lines: TStringList;
-  MetricName: string;
-  I, J: integer;
-  Children: TPrometheusHistogramChildren;
-  BucketName: string;
-  BucketCounter: integer;
-begin
-  Lines := TStringList.Create;
-  Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
-  if Description <> '' then
-    Lines.Add(Format('# HELP %s %s', [Name, Description]));
-
-  for I := 0 to Storage.Count - 1 do
-  begin
-    Children := TPrometheusHistogramChildren(Storage.Items[I]);
-    for J := 1 to High(Children.GetMetric.BucketCounters) do
-    begin
-      BucketName := Format('%f', [Children.GetMetric.BucketCounters[J].UpperInclusiveBound]);
-      BucketCounter := Children.GetMetric.BucketCounters[J].Counter;
-      MetricName := GetMetricName(Storage.NameOfIndex(I));
-      MetricName := StringReplace(MetricName, '}', Format(', le="%s"}', [BucketName]), []);
-      Lines.Add(Format('%s %d', [MetricName, BucketCounter]));
-    end;
-
-    MetricName := GetMetricName(Storage.NameOfIndex(I));
-    MetricName := StringReplace(MetricName, '}', ', le="+Inf"}', []);
-    Lines.Add(Format('%s %d', [MetricName, Children.GetMetric.Counter]));
-    MetricName := GetMetricName(Storage.NameOfIndex(I));
-    Lines.Add(Format('%s %f', [StringReplace(MetricName, '{', '_sum{', []), Children.GetMetric.TotalSum]));
-    Lines.Add(Format('%s %d', [StringReplace(MetricName, '{', '_count{', []), Children.GetMetric.Counter]));
-  end;
-
-  Result := Lines.Text;
-  Lines.Free;
-end;
-
-{ TPrometheusHistogramChildren }
-
-procedure TPrometheusHistogramChildren.Observe(Amount: double);
-var
-  I: integer;
-begin
-  Inc(Value.Counter);
-  Value.TotalSum := Value.TotalSum + Amount;
-  for I := Low(Value.BucketCounters) to High(Value.BucketCounters) do
-    if Amount <= Value.BucketCounters[I].UpperInclusiveBound then
-      Inc(Value.BucketCounters[I].Counter);
-end;
-
-function TPrometheusHistogramChildren.GetMetric: TPrometheusBucketResult;
-begin
-  Result := Value;
-end;
-
-{ TPrometheusGaugeChildren }
-
-procedure TPrometheusGaugeChildren.Inc(Amount: double);
-begin
-  Value := Value + Amount;
-end;
-
-procedure TPrometheusGaugeChildren.Dec(Amount: double);
-begin
-  Value := Value - Amount;
-end;
-
-procedure TPrometheusGaugeChildren.SetAmount(Amount: double);
-begin
-  Value := Amount;
-end;
-
-procedure TPrometheusGaugeChildren.SetToCurrentTime;
-begin
-  Value := DateTimeToUnix(Now);
-end;
-
-procedure TPrometheusGaugeChildren.StartTimer;
-begin
-  TimerStartTime := DateTimeToUnix(Now) + (MillisecondOf(Now) / 1000);
-end;
-
-procedure TPrometheusGaugeChildren.SetDuration;
-var
-  CurrentUnixMilliseconds: double;
-begin
-  CurrentUnixMilliseconds := DateTimeToUnix(Now) + (MillisecondOf(Now) / 1000);
-  SetAmount(CurrentUnixMilliseconds - TimerStartTime);
-end;
-
-function TPrometheusGaugeChildren.GetMetric: double;
-begin
-  Result := Value;
-end;
-
-{ TPrometheusCounterChildren }
-
-procedure TPrometheusCounterChildren.Inc(Amount: double);
-begin
-  if Amount < 0 then
-    raise Exception.Create('Increment must be a non-negative number');
-  Value := Value + Amount;
-end;
-
-function TPrometheusCounterChildren.GetMetric: double;
-begin
-  Result := Value;
-end;
-
-{ TPrometheusGauge }
-
-procedure TPrometheusGauge.Inc(Amount: double);
-begin
-  WithLabels([]).Inc(Amount);
-end;
-
-procedure TPrometheusGauge.Dec(Amount: double);
-begin
-  WithLabels([]).Dec(Amount);
-end;
-
-procedure TPrometheusGauge.SetAmount(Amount: double);
-begin
-  WithLabels([]).SetAmount(Amount);
-end;
-
-procedure TPrometheusGauge.SetToCurrentTime;
-begin
-  WithLabels([]).SetToCurrentTime;
-end;
-
-procedure TPrometheusGauge.StartTimer;
-begin
-  WithLabels([]).StartTimer;
-end;
-
-procedure TPrometheusGauge.SetDuration;
-begin
-  WithLabels([]).SetDuration;
-end;
-
-function TPrometheusGauge.GetMetric: double;
-begin
-  Result := WithLabels([]).GetMetric;
-end;
-
-function TPrometheusGauge.WithLabels(LabelArray: array of const):
-TPrometheusGaugeChildren;
-var
-  Key: string;
-  Index: integer;
-begin
-  Key := GetKeyFromLabels(LabelArray);
-  Index := Storage.FindIndexOf(Key);
-
-  if Index < 0 then
-  begin
-    Result := TPrometheusGaugeChildren.Create;
-    Result.Key := Key;
-    Result.Inc(0);
-    Index := Storage.Add(Key, Result);
-  end;
-
-  Result := TPrometheusGaugeChildren(Storage.Items[Index]);
-end;
-
-{ TPrometheusCounter }
-
-procedure TPrometheusCounter.Inc(Amount: double);
-begin
-  WithLabels([]).Inc(Amount);
-end;
-
-function TPrometheusCounter.GetMetric: double;
-begin
-  Result := WithLabels([]).GetMetric;
-end;
-
-function TPrometheusCounter.WithLabels(LabelArray: array of
-  const): TPrometheusCounterChildren;
-var
-  Key: string;
-  Index: integer;
-begin
-  Key := GetKeyFromLabels(LabelArray);
-  Index := Storage.FindIndexOf(Key);
-
-  if Index < 0 then
-  begin
-    Result := TPrometheusCounterChildren.Create;
-    Result.Key := Key;
-    Result.Inc(0);
-    Index := Storage.Add(Key, Result);
-  end;
-
-  Result := TPrometheusCounterChildren(Storage.Items[Index]);
-end;
-
-{ TPrometheusCollector }
-
-procedure TPrometheusCollector.ValidateMetricName(Name: string);
+procedure TPrometheusCustomCollector.ValidateMetricName(Name: string);
 var
   Regex: TRegExpr;
   Valid: boolean;
@@ -385,7 +70,7 @@ begin
     raise Exception.Create('Invalid metric name found');
 end;
 
-procedure TPrometheusCollector.ValidateLabelName(Name: string);
+procedure TPrometheusCustomCollector.ValidateLabelName(Name: string);
 var
   Found: boolean;
   Regex: TRegExpr;
@@ -401,12 +86,12 @@ begin
     raise Exception.Create('Invalid label name found');
 end;
 
-procedure TPrometheusCollector.BuildStorage;
+procedure TPrometheusCustomCollector.BuildStorage;
 begin
-  Storage := TFPHashObjectList.Create(True);
+  FStorage := TFPHashObjectList.Create(True);
 end;
 
-function TPrometheusCollector.GetKeyFromLabels(LabelArray: array of const): string;
+function TPrometheusCustomCollector.GetKeyFromLabels(LabelArray: array of const): string;
 var
   LabelName: string;
   LabelList: TStringList;
@@ -432,7 +117,7 @@ begin
   end;
 end;
 
-function TPrometheusCollector.GetMetricName(LabelString: string): string;
+function TPrometheusCustomCollector.GetMetricName(LabelString: string): string;
 var
   LabelList, ConvertedList: TStringList;
   I: integer;
@@ -460,7 +145,7 @@ begin
   ConvertedList.Free;
 end;
 
-function TPrometheusCollector.GetMetricType: string;
+function TPrometheusCustomCollector.GetMetricType: string;
 begin
   case Self.ToString of
     'TPrometheusCounter': Result := 'counter';
@@ -469,57 +154,30 @@ begin
   end;
 end;
 
-constructor TPrometheusCollector.Create(Options: TPrometheusOpts);
+constructor TPrometheusCustomCollector.Create(Options: TPrometheusOptions);
 begin
   ValidateMetricName(Options.Name);
-  Opts := Options;
+  FOptions := Options;
   BuildStorage;
 end;
 
-constructor TPrometheusCollector.Create(Name: string; Description: string);
+constructor TPrometheusCustomCollector.Create(Name: string; Description: string);
 var
-  Options: TPrometheusOpts;
+  Options: TPrometheusOptions;
 begin
   Options.Name := Name;
   Options.Description := Description;
   Create(Options);
 end;
 
-destructor TPrometheusCollector.Destroy;
+destructor TPrometheusCustomCollector.Destroy;
 begin
-  if Assigned(Storage) then
+  if Assigned(FStorage) then
   begin
-    Storage.Clear;
-    Storage.Free;
+    FStorage.Clear;
+    FStorage.Free;
   end;
   inherited Destroy;
-end;
-
-function TPrometheusCollector.Expose: string;
-var
-  Lines: TStringList;
-  MetricName: string;
-  I: integer;
-  Children: TPrometheusCounterChildren;
-  Amount: string;
-begin
-  Lines := TStringList.Create;
-  Lines.Add(Format('# TYPE %s %s', [Name, GetMetricType]));
-  if Description <> '' then
-    Lines.Add(Format('# HELP %s %s', [Name, Description]));
-
-  for I := 0 to Storage.Count - 1 do
-  begin
-    MetricName := GetMetricName(Storage.NameOfIndex(I));
-    Children := TPrometheusCounterChildren(Storage.Items[I]);
-    Amount := Format('%f', [Children.GetMetric]);
-    if AnsiEndsStr('.00', Amount) then
-      Amount := IntToStr(Round(Children.GetMetric));
-    Lines.Add(Format('%s %s', [MetricName, Amount]));
-  end;
-
-  Result := Lines.Text;
-  Lines.Free;
 end;
 
 end.

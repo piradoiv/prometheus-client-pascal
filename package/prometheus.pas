@@ -8,7 +8,8 @@ unit prometheus;
 interface
 
 uses
-  PrometheusRegistry, PrometheusClasses, LazarusPackageIntf;
+  PrometheusRegistry, PrometheusClasses, PrometheusCounter, PrometheusGauge, 
+  PrometheusHistogram, LazarusPackageIntf;
 
 implementation
 
