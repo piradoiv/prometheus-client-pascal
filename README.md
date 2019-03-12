@@ -1,14 +1,23 @@
 # Prometheus Client for FreePascal [![Build Status](https://travis-ci.org/piradoiv/prometheus-client-pascal.svg?branch=master)](https://travis-ci.org/piradoiv/prometheus-client-pascal)
 
-👷 This is a work in progress repository. Please come back later :)
+This is the [FreePascal](https://www.freepascal.org/) client library for [Prometheus](https://prometheus.io/), an open-source systems monitoring and alerting toolkit. Combined with [Grafana](https://grafana.com/), you'll be able to create dashboards and see what's happening inside your application.
+
+As of 2016, Prometheus lives under the umbrella of [Cloud Native Computing Foundation](https://www.cncf.io/).
+
+![Prometheus with Grafana](https://github.com/piradoiv/prometheus-client-pascal/blob/master/img/grafana_prometheus.png?raw=true)
+
+This library just collects data, you'll need a running Prometheus server to extract, query and monitor it.
+
+Usage examples will be provided in this README soon, but you can take a look to the [tests folder](./tests) in the meantime.
 
 ## Implementation status
 
-This library is in an alpha stage and is not intended for production use yet. You may find memory leaks and is NOT thread safe at the moment.
+This library is in alpha stage, and is not intended for production use yet. While you won't have memory leak issues, this client is NOT thread safe at the moment (but surely will be). A roadmap is available through the [milestones](https://github.com/piradoiv/prometheus-client-pascal/milestones) section of this repository.
 
 ### Metrics
 
-- Counter ⚠️ Partially implemented
-- Gauge ⚠️ Partially implemented
-- Summary ❌ Not implemented yet
-- Histogram ⚠️ Partially implemented
+- [Counter](https://prometheus.io/docs/concepts/metric_types/#counter) 👷 Not finished yet, but usable
+- [Gauge](https://prometheus.io/docs/concepts/metric_types/#gauge) 👷 Not finished yet, but usable
+- [Histogram](https://prometheus.io/docs/concepts/metric_types/#histogram) 👷 Work in progress ([histograms](https://github.com/piradoiv/prometheus-client-pascal/tree/histograms) branch)
+- [Summary](https://prometheus.io/docs/concepts/metric_types/#summary) ❌ Not implemented yet
+
