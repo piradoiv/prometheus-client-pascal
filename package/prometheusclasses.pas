@@ -78,6 +78,9 @@ begin
   if AnsiStartsStr('__', Name) then
     raise Exception.Create('Invalid label name found');
 
+  if (Name = 'le') and (ToString = 'TPrometheusHistogram') then
+    raise Exception.Create('Label with name "le" is not permitted');
+
   Regex := TRegExpr.Create;
   Regex.Expression := '^[a-zA-Z_][a-zA-Z0-9_]*$';
   Found := Regex.Exec(Name);

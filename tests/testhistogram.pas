@@ -22,6 +22,7 @@ type
     procedure TestHookUp;
     procedure TestCanObserveResult;
     procedure TestCanObserveResultWithLabels;
+    procedure TestSomeLabelNamesAreBeingForbidded;
   end;
 
 implementation
@@ -86,6 +87,14 @@ begin
     else
       AssertEquals(0, Child.GetMetric.BucketCounters[I].Counter);
   end;
+end;
+
+procedure TTestHistogram.TestSomeLabelNamesAreBeingForbidded;
+var
+  Child: TPrometheusHistogramChildren;
+begin
+  Self.ExpectException('Exception must be thrown', Exception, 'Label with name "le" is not permitted');
+  Child := Histogram.WithLabels(['le', 'nope']);
 end;
 
 initialization
