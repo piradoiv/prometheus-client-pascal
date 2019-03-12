@@ -21,6 +21,7 @@ type
   published
     procedure TestHookUp;
     procedure TestCanObserveResult;
+    procedure TestCanObserveResultWithLabels;
   end;
 
 implementation
@@ -67,6 +68,23 @@ begin
     Actual := Histogram.GetMetric.BucketCounters[I].Counter;
     Message := Format('%f must be %d and it was %d', [UpperBound, Expected, Actual]);
     AssertEquals(Message, Expected, Actual);
+  end;
+end;
+
+procedure TTestHistogram.TestCanObserveResultWithLabels;
+var
+  Child: TPrometheusHistogramChildren;
+  I: integer;
+begin
+  Child := Histogram.WithLabels(['foo', 'bar']);
+  Child.Observe(1);
+  for I := Low(Child.GetMetric.BucketCounters)
+    to High(Child.GetMetric.BucketCounters) do
+  begin
+    if Child.GetMetric.BucketCounters[I].UpperInclusiveBound >= 1 then
+      AssertEquals(1, Child.GetMetric.BucketCounters[I].Counter)
+    else
+      AssertEquals(0, Child.GetMetric.BucketCounters[I].Counter);
   end;
 end;
 
