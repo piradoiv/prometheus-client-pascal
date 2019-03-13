@@ -7,7 +7,8 @@ uses
   SysUtils,
   FPHttpServer,
   PrometheusRegistry,
-  PrometheusClasses;
+  PrometheusCounter,
+  PrometheusGauge;
 
 type
 

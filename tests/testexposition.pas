@@ -5,7 +5,8 @@ unit TestExposition;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, PrometheusRegistry, PrometheusClasses;
+  Classes, SysUtils, fpcunit, testregistry, PrometheusRegistry,
+  PrometheusClasses, PrometheusCounter, PrometheusGauge, PrometheusHistogram;
 
 type
 
@@ -21,6 +22,7 @@ type
     procedure TestHookUp;
     procedure TestCanExposeCounters;
     procedure TestCanExposeGauges;
+    procedure TestCanExposeHistograms;
     procedure TestCanExposeEverything;
   end;
 
@@ -110,14 +112,58 @@ begin
   AssertEquals(Expected, Actual);
 end;
 
+procedure TTestExposition.TestCanExposeHistograms;
+var
+  Histogram: TPrometheusHistogram;
+  Child: TPrometheusHistogramChildren;
+  ExpectedList, ActualList: TStringList;
+  Expected, Actual: string;
+begin
+  Histogram := TPrometheusHistogram.Create('foo', 'bar');
+  Child := Histogram.WithLabels(['hello', 'world']);
+  Child.Observe(5);
+  Child.Observe(5);
+
+  ExpectedList := TStringList.Create;
+  with ExpectedList do
+  begin
+    Add('# TYPE foo histogram');
+    Add('# HELP foo bar');
+    Add('foo{hello="world", le="0.01"} 0');
+    Add('foo{hello="world", le="0.03"} 0');
+    Add('foo{hello="world", le="0.05"} 0');
+    Add('foo{hello="world", le="0.10"} 0');
+    Add('foo{hello="world", le="0.25"} 0');
+    Add('foo{hello="world", le="0.50"} 0');
+    Add('foo{hello="world", le="1.00"} 0');
+    Add('foo{hello="world", le="2.50"} 0');
+    Add('foo{hello="world", le="5.00"} 2');
+    Add('foo{hello="world", le="10.00"} 2');
+    Add('foo{hello="world", le="+Inf"} 2');
+    Add('foo_sum{hello="world"} 10.00');
+    Add('foo_count{hello="world"} 2');
+  end;
+
+  ActualList := TStringList.Create;
+  ActualList.Text := Histogram.Expose;
+
+  Expected := ExpectedList.Text;
+  Actual := ActualList.Text;
+  ExpectedList.Free;
+  ActualList.Free;
+  Histogram.Free;
+
+  AssertEquals(Expected, Actual);
+end;
+
 procedure TTestExposition.TestCanExposeEverything;
 var
   Counter1, Counter2: TPrometheusCounter;
   ExpectedList, ActualList: TStringList;
   Expected, Actual: string;
 begin
-  Counter1 := Prometheus.Counter('counter1');
-  Counter2 := Prometheus.Counter('counter2');
+  Counter1 := Prometheus.Counter('counter1', 'help1');
+  Counter2 := Prometheus.Counter('counter2', 'help2');
 
   Counter1.Inc(10);
   Counter2.Inc(100);
@@ -128,9 +174,11 @@ begin
   with ExpectedList do
   begin
     Add('# TYPE counter1 counter');
+    Add('# HELP counter1 help1');
     Add('counter1 10');
     Add('');
     Add('# TYPE counter2 counter');
+    Add('# HELP counter2 help2');
     Add('counter2 100');
     Add('');
   end;

@@ -28,7 +28,7 @@
         <PackageName Value="FCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="5">
+    <Units Count="6">
       <Unit0>
         <Filename Value="prometheusclienttests.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -53,6 +53,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="TestExposition"/>
       </Unit4>
+      <Unit5>
+        <Filename Value="testhistogram.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TestHistogram"/>
+      </Unit5>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

@@ -5,7 +5,8 @@ unit TestGauge;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, PrometheusClasses, DateUtils;
+  Classes, SysUtils, fpcunit, testregistry, DateUtils, PrometheusClasses,
+  PrometheusGauge;
 
 type
 
@@ -46,20 +47,20 @@ end;
 
 procedure TTestGauge.TestCanIncreaseAmount;
 begin
-  AssertEquals(0, TestGauge.GetMetric);
+  AssertEquals(0, TestGauge.GetMetricAsDouble);
   TestGauge.Inc;
-  AssertEquals(1, TestGauge.GetMetric);
+  AssertEquals(1, TestGauge.GetMetricAsDouble);
   TestGauge.Inc(41);
-  AssertEquals(42, TestGauge.GetMetric);
+  AssertEquals(42, TestGauge.GetMetricAsDouble);
 end;
 
 procedure TTestGauge.TestCanDecreaseAmount;
 begin
-  AssertEquals(0, TestGauge.GetMetric);
+  AssertEquals(0, TestGauge.GetMetricAsDouble);
   TestGauge.Dec;
-  AssertEquals(-1, TestGauge.GetMetric);
+  AssertEquals(-1, TestGauge.GetMetricAsDouble);
   TestGauge.Dec(41);
-  AssertEquals(-42, TestGauge.GetMetric);
+  AssertEquals(-42, TestGauge.GetMetricAsDouble);
 end;
 
 procedure TTestGauge.TestCanIncreaseAndDecreaseAmountsForSpecificLabels;
@@ -72,17 +73,17 @@ begin
   TestGauge.WithLabels(['bar', 'yes']).Dec(5);
   TestGauge.WithLabels(['foo', 'no', 'bar', 'yes']).Dec(5);
 
-  AssertEquals(5, TestGauge.WithLabels(['foo', 'yes']).GetMetric);
-  AssertEquals(15, TestGauge.WithLabels(['bar', 'yes']).GetMetric);
-  AssertEquals(25, TestGauge.WithLabels(['foo', 'no', 'bar', 'yes']).GetMetric);
+  AssertEquals(5, TestGauge.WithLabels(['foo', 'yes']).GetMetricAsDouble);
+  AssertEquals(15, TestGauge.WithLabels(['bar', 'yes']).GetMetricAsDouble);
+  AssertEquals(25, TestGauge.WithLabels(['foo', 'no', 'bar', 'yes']).GetMetricAsDouble);
 end;
 
 procedure TTestGauge.TestCanSetAmount;
 begin
   TestGauge.SetAmount(42);
-  AssertEquals(42, TestGauge.GetMetric);
+  AssertEquals(42, TestGauge.GetMetricAsDouble);
   TestGauge.WithLabels(['foo', 'yes']).SetAmount(128);
-  AssertEquals(128, TestGauge.WithLabels(['foo', 'yes']).GetMetric);
+  AssertEquals(128, TestGauge.WithLabels(['foo', 'yes']).GetMetricAsDouble);
 end;
 
 procedure TTestGauge.TestCanSetToCurrentTime;
@@ -91,8 +92,8 @@ var
 begin
   TestGauge.SetToCurrentTime;
   Timestamp := DateTimeToUnix(Now);
-  AssertTrue(TestGauge.GetMetric > Timestamp - 2);
-  AssertTrue(TestGauge.GetMetric < Timestamp + 2);
+  AssertTrue(TestGauge.GetMetricAsDouble > Timestamp - 2);
+  AssertTrue(TestGauge.GetMetricAsDouble < Timestamp + 2);
 end;
 
 procedure TTestGauge.TestCanUseTimer;
@@ -101,17 +102,17 @@ var
 begin
   Children := TestGauge.WithLabels(['foo', 'bar']);
   Children.StartTimer;
-  Sleep(10);
+  Sleep(11);
   TestGauge.StartTimer;
   Sleep(11);
   TestGauge.SetDuration;
-  Sleep(10);
+  Sleep(11);
   Children.SetDuration;
 
-  AssertTrue('Must be greater or equal to 0.01', TestGauge.GetMetric >= 0.01);
-  AssertTrue('Must be less than 0.02', TestGauge.GetMetric < 0.02);
-  AssertTrue('Children must be greater or equal to 0.03', Children.GetMetric >= 0.03);
-  AssertTrue('Children must be less than 0.04', Children.GetMetric < 0.04);
+  AssertTrue('Must be greater or equal to 0.01', TestGauge.GetMetricAsDouble >= 0.01);
+  AssertTrue('Must be less than 0.05', TestGauge.GetMetricAsDouble < 0.05);
+  AssertTrue('Children must be greater or equal to 0.025', Children.GetMetricAsDouble >= 0.025);
+  AssertTrue('Children must be less than 0.05', Children.GetMetricAsDouble < 0.05);
 end;
 
 initialization

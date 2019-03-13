@@ -5,7 +5,8 @@ unit PrometheusRegistry;
 interface
 
 uses
-  Classes, SysUtils, PrometheusClasses;
+  Classes, SysUtils, PrometheusClasses, PrometheusCounter, PrometheusGauge,
+  PrometheusHistogram;
 
 type
 
@@ -17,12 +18,13 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Register(Metric: TPrometheusCollector);
+    procedure Register(Metric: TPrometheusCustomCollector);
     procedure Unregister(Name: string);
-    function Counter(Name: string; Help: string = ''): TPrometheusCounter;
-    function Gauge(Name: string; Help: string = ''): TPrometheusGauge;
+    function Counter(Name: string; Help: string): TPrometheusCounter;
+    function Gauge(Name: string; Help: string): TPrometheusGauge;
+    function Histogram(Name: string; Help: string): TPrometheusHistogram;
     function Exists(Name: string): boolean;
-    function Get(Name: string): TPrometheusCollector;
+    function Get(Name: string): TPrometheusCustomCollector;
     function Expose: string;
   end;
 
@@ -45,7 +47,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TPrometheusRegistry.Register(Metric: TPrometheusCollector);
+procedure TPrometheusRegistry.Register(Metric: TPrometheusCustomCollector);
 begin
   if Exists(Metric.Name) then
     raise Exception.Create(Format('%s has been already registered', [Metric.Name]));
@@ -67,13 +69,19 @@ end;
 function TPrometheusRegistry.Counter(Name: string; Help: string): TPrometheusCounter;
 begin
   Result := TPrometheusCounter.Create(Name, Help);
-  Self.Register(Result);
+  Register(Result);
 end;
 
 function TPrometheusRegistry.Gauge(Name: string; Help: string): TPrometheusGauge;
 begin
   Result := TPrometheusGauge.Create(Name, Help);
-  Self.Register(Result);
+  Register(Result);
+end;
+
+function TPrometheusRegistry.Histogram(Name: string; Help: string): TPrometheusHistogram;
+begin
+  Result := TPrometheusHistogram.Create(Name, Help);
+  Register(Result);
 end;
 
 function TPrometheusRegistry.Exists(Name: string): boolean;
@@ -83,12 +91,12 @@ begin
   Result := Storage.Find(Name, Index);
 end;
 
-function TPrometheusRegistry.Get(Name: string): TPrometheusCollector;
+function TPrometheusRegistry.Get(Name: string): TPrometheusCustomCollector;
 var
   Index: integer;
 begin
   if Storage.Find(Name, Index) then
-    Result := TPrometheusCollector(Storage.Objects[Index]);
+    Result := TPrometheusCustomCollector(Storage.Objects[Index]);
 end;
 
 function TPrometheusRegistry.Expose: string;
@@ -97,7 +105,7 @@ var
 begin
   Result := '';
   for I := 0 to Storage.Count - 1 do
-    Result := Concat(Result, TPrometheusCollector(Storage.Objects[I]).Expose, #13#10);
+    Result := Concat(Result, TPrometheusCustomCollector(Storage.Objects[I]).Expose, #13#10);
 end;
 
 end.

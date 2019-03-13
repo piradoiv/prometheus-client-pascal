@@ -5,7 +5,8 @@ unit TestPrometheusClient;
 interface
 
 uses
-  Classes, SysUtils, fpcunit, testregistry, PrometheusRegistry, PrometheusClasses;
+  Classes, SysUtils, fpcunit, testregistry, PrometheusRegistry,
+  PrometheusClasses, PrometheusCounter;
 
 type
 
@@ -80,7 +81,7 @@ begin
   Counter.Inc(42);
   Registry.Register(Counter);
   Counter := TPrometheusCounter(Registry.Get(Counter.Name));
-  AssertEquals(42, Counter.GetMetric);
+  AssertEquals(42, Counter.GetMetricAsDouble);
 end;
 
 procedure TTestPrometheusClient.TestCanCreateAndRegisterCounter;
@@ -89,7 +90,7 @@ var
 begin
   Counter := Registry.Counter('test', 'help');
   Counter.Inc(42);
-  AssertEquals(42, Counter.GetMetric);
+  AssertEquals(42, Counter.GetMetricAsDouble);
 end;
 
 initialization
