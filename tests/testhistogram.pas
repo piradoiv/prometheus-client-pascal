@@ -24,6 +24,7 @@ type
     procedure TestCanObserveResultWithLabels;
     procedure TestSomeLabelNamesAreBeingForbidded;
     procedure TestCanCreateHistogramsWithSpecificBuckets;
+    procedure TestBucketsMustNotBeChangeableOnceTheMetricIsCreated;
   end;
 
 implementation
@@ -109,6 +110,16 @@ begin
       AssertEquals(CustomBuckets[I], GetMetric.BucketCounters[I].UpperInclusiveBound);
     Free;
   end;
+end;
+
+procedure TTestHistogram.TestBucketsMustNotBeChangeableOnceTheMetricIsCreated;
+var
+  CustomBuckets: array[0..3] of double = (1, 2, 3, 4);
+begin
+  ExpectException('Exception must be thrown', Exception,
+    'Can not modify buckets if they''re already set');
+  Histogram.Observe(42);
+  Histogram.SetBuckets(CustomBuckets);
 end;
 
 initialization

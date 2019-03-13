@@ -45,7 +45,6 @@ implementation
 constructor TPrometheusHistogram.Create(Options: TPrometheusOptions);
 begin
   inherited Create(Options);
-  SetBuckets(DEFAULT_BUCKETS);
 end;
 
 constructor TPrometheusHistogram.Create(AName: string; ADescription: string);
@@ -59,11 +58,17 @@ end;
 
 procedure TPrometheusHistogram.Observe(Amount: double);
 begin
+  if not Assigned(Buckets) then
+    SetBuckets(DEFAULT_BUCKETS);
+
   WithLabels([]).Observe(Amount);
 end;
 
 procedure TPrometheusHistogram.SetBuckets(CustomBuckets: TPrometheusCustomBuckets);
 begin
+  if Assigned(Buckets) then
+    raise Exception.Create('Can not modify buckets if they''re already set');
+
   Buckets := CustomBuckets;
 end;
 
@@ -78,6 +83,9 @@ var
   AKey: string;
   I, Index: integer;
 begin
+  if not Assigned(Buckets) then
+    SetBuckets(DEFAULT_BUCKETS);
+
   AKey := GetKeyFromLabels(LabelArray);
   Index := FStorage.FindIndexOf(AKey);
 
