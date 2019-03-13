@@ -28,9 +28,38 @@ type
     procedure TestCanIncreaseAmountOnChildren;
     procedure TestMetricNamesAreBeingVerified;
     procedure TestLabelNamesAreBeingVerified;
+    procedure TestCounterIsThreadSafe;
+  end;
+
+  { TCounterThread }
+  TCounterThread = class(TThread)
+  private
+    TestCounter: TPrometheusCounter;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(Counter: TPrometheusCounter);
   end;
 
 implementation
+
+{ TCounterThread }
+
+constructor TCounterThread.Create(Counter: TPrometheusCounter);
+begin
+  TestCounter := Counter;
+  inherited Create(True);
+end;
+
+procedure TCounterThread.Execute;
+var
+  I: integer;
+begin
+  for I := 1 to 200000 do
+    TestCounter.Inc;
+end;
+
+{ TTestCounter }
 
 procedure TTestCounter.SetUp;
 begin
@@ -228,6 +257,27 @@ begin
 
   ValidLabels.Free;
   InvalidLabels.Free;
+end;
+
+procedure TTestCounter.TestCounterIsThreadSafe;
+var
+  I: integer;
+  Threads: array[1..5] of TCounterThread;
+begin
+  for I := Low(Threads) to High(Threads) do
+  begin
+    Threads[I] := TCounterThread.Create(TestCounter);
+    Threads[I].FreeOnTerminate := False;
+    Threads[I].Start;
+  end;
+
+  for I := Low(Threads) to High(Threads) do
+    Threads[I].WaitFor;
+
+  for I := High(Threads) to Low(Threads) do
+    Threads[I].Free;
+
+  AssertEquals(1000000, TestCounter.GetMetricAsDouble);
 end;
 
 initialization

@@ -5,7 +5,7 @@ unit PrometheusClasses;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, contnrs, Regexpr;
+  Classes, SysUtils, StrUtils, contnrs, Regexpr, Syncobjs;
 
 type
   TPrometheusOptions = packed record
@@ -19,9 +19,12 @@ type
   protected
     FOptions: TPrometheusOptions;
     FStorage: TFPHashObjectList;
+    FMutex: TRTLCriticalSection;
     procedure ValidateMetricName(Name: string);
     procedure ValidateLabelName(Name: string);
     procedure BuildStorage;
+    procedure Lock;
+    procedure Unlock;
     function GetKeyFromLabels(LabelArray: array of const): string;
     function GetMetricName(LabelString: string): string;
     function GetMetricType: string;
@@ -97,6 +100,16 @@ begin
   FStorage := TFPHashObjectList.Create(True);
 end;
 
+procedure TPrometheusCustomCollector.Lock;
+begin
+  EnterCriticalSection(FMutex);
+end;
+
+procedure TPrometheusCustomCollector.Unlock;
+begin
+  LeaveCriticalSection(FMutex);
+end;
+
 function TPrometheusCustomCollector.GetKeyFromLabels(LabelArray: array of const): string;
 var
   LabelName: string;
@@ -162,9 +175,10 @@ end;
 
 constructor TPrometheusCustomCollector.Create(Options: TPrometheusOptions);
 begin
-  ValidateMetricName(Options.Name);
+  InitCriticalSection(FMutex);
   FOptions := Options;
   BuildStorage;
+  ValidateMetricName(Options.Name);
 end;
 
 constructor TPrometheusCustomCollector.Create(Name: string; Description: string);
@@ -178,11 +192,9 @@ end;
 
 destructor TPrometheusCustomCollector.Destroy;
 begin
-  if Assigned(FStorage) then
-  begin
-    FStorage.Clear;
-    FStorage.Free;
-  end;
+  FStorage.Clear;
+  FStorage.Free;
+  DoneCriticalSection(FMutex);
   inherited Destroy;
 end;
 

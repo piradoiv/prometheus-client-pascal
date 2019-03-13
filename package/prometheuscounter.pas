@@ -69,7 +69,10 @@ procedure TPrometheusCounterChildren.Inc(Amount: double);
 begin
   if Amount < 0 then
     raise Exception.Create('Increment must be a non-negative number');
+
+  Lock;
   Value := Value + Amount;
+  Unlock;
 end;
 
 function TPrometheusCounterChildren.GetMetricAsDouble: double;
