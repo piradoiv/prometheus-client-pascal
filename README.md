@@ -18,6 +18,6 @@ This library is in alpha stage, and is not intended for production use yet. Whil
 
 - [Counter](https://prometheus.io/docs/concepts/metric_types/#counter) 👷 Not finished yet, but usable
 - [Gauge](https://prometheus.io/docs/concepts/metric_types/#gauge) 👷 Not finished yet, but usable
-- [Histogram](https://prometheus.io/docs/concepts/metric_types/#histogram) 👷 Work in progress ([histograms](https://github.com/piradoiv/prometheus-client-pascal/tree/histograms) branch)
+- [Histogram](https://prometheus.io/docs/concepts/metric_types/#histogram) 👷 Not finished yet, but usable
 - [Summary](https://prometheus.io/docs/concepts/metric_types/#summary) ❌ Not implemented yet
 
