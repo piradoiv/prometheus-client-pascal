@@ -97,26 +97,33 @@ begin
 end;
 
 procedure TTestGauge.TestCanUseTimer;
+const
+  OFFSET = 50;
 var
   Children: TPrometheusGaugeChildren;
+  StartTime: double;
 begin
+  StartTime := DateTimeToUnix(Now) - OFFSET;
   Children := TestGauge.WithLabels(['foo', 'bar']);
-  Children.StartTimer;
-  Sleep(11);
-  TestGauge.StartTimer;
-  Sleep(11);
+  Children.StartTimer(StartTime);
+  TestGauge.StartTimer(StartTime);
   TestGauge.SetDuration;
-  Sleep(11);
   Children.SetDuration;
 
-  AssertTrue('Must be greater or equal to 0.01', TestGauge.GetMetricAsDouble >= 0.01);
-  AssertTrue('Must be less than 0.05', TestGauge.GetMetricAsDouble < 0.05);
-  AssertTrue('Children must be greater or equal to 0.025', Children.GetMetricAsDouble >= 0.025);
-  AssertTrue('Children must be less than 0.05', Children.GetMetricAsDouble < 0.05);
+  AssertTrue('Must be greater than zero',
+    TestGauge.GetMetricAsDouble > 0);
+
+  AssertTrue('Must be around OFFSET',
+    TestGauge.GetMetricAsDouble - OFFSET < 5);
+
+  AssertTrue('Children must be greater than zero',
+    Children.GetMetricAsDouble > 0);
+
+  AssertTrue('Children must be around OFFSET',
+    Children.GetMetricAsDouble - OFFSET < 5);
 end;
 
 initialization
 
   RegisterTest(TTestGauge);
 end.
-

@@ -21,6 +21,7 @@ type
     procedure SetAmount(Amount: double = 1);
     procedure SetToCurrentTime;
     procedure StartTimer;
+    procedure StartTimer(StartTime: double);
     procedure SetDuration;
     function GetMetricAsDouble: double;
   end;
@@ -34,6 +35,7 @@ type
     procedure SetAmount(Amount: double = 1);
     procedure SetToCurrentTime;
     procedure StartTimer;
+    procedure StartTimer(StartTime: double);
     procedure SetDuration;
     function GetMetricAsDouble: double;
     function WithLabels(LabelArray: array of const): TPrometheusGaugeChildren;
@@ -66,7 +68,12 @@ end;
 
 procedure TPrometheusGaugeChildren.StartTimer;
 begin
-  TimerStartTime := DateTimeToUnix(Now) + (MillisecondOf(Now) / 1000);
+  StartTimer(DateTimeToUnix(Now) + (MillisecondOf(Now) / 1000));
+end;
+
+procedure TPrometheusGaugeChildren.StartTimer(StartTime: double);
+begin
+  TimerStartTime := StartTime;
 end;
 
 procedure TPrometheusGaugeChildren.SetDuration;
@@ -107,6 +114,11 @@ end;
 procedure TPrometheusGauge.StartTimer;
 begin
   WithLabels([]).StartTimer;
+end;
+
+procedure TPrometheusGauge.StartTimer(StartTime: double);
+begin
+  WithLabels([]).StartTimer(StartTime);
 end;
 
 procedure TPrometheusGauge.SetDuration;
