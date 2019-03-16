@@ -31,8 +31,8 @@ type
     procedure TestCounterIsThreadSafe;
   end;
 
-  { TCounterThread }
-  TCounterThread = class(TThread)
+  { TTestThread }
+  TTestThread = class(TThread)
   private
     TestCounter: TPrometheusCounter;
   protected
@@ -43,16 +43,16 @@ type
 
 implementation
 
-{ TCounterThread }
+{ TTestThread }
 
-constructor TCounterThread.Create(Counter: TPrometheusCounter);
+constructor TTestThread.Create(Counter: TPrometheusCounter);
 begin
   TestCounter := Counter;
   FreeOnTerminate := False;
   inherited Create(False);
 end;
 
-procedure TCounterThread.Execute;
+procedure TTestThread.Execute;
 var
   I: integer;
 begin
@@ -263,10 +263,10 @@ end;
 procedure TTestCounter.TestCounterIsThreadSafe;
 var
   I: integer;
-  Threads: array[1..16] of TCounterThread;
+  Threads: array[1..16] of TTestThread;
 begin
   for I := Low(Threads) to High(Threads) do
-    Threads[I] := TCounterThread.Create(TestCounter);
+    Threads[I] := TTestThread.Create(TestCounter);
 
   for I := Low(Threads) to High(Threads) do
     Threads[I].WaitFor;
