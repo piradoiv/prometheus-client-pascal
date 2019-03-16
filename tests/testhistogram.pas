@@ -25,9 +25,40 @@ type
     procedure TestSomeLabelNamesAreBeingForbidded;
     procedure TestCanCreateHistogramsWithSpecificBuckets;
     procedure TestBucketsMustNotBeChangeableOnceTheMetricIsCreated;
+    procedure TestHistogramIsThreadSafe;
+  end;
+
+  { TTestThread }
+
+  TTestThread = class(TThread)
+  private
+    TestHistogram: TPrometheusHistogram;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(Histogram: TPrometheusHistogram);
   end;
 
 implementation
+
+{ TTestThread }
+
+constructor TTestThread.Create(Histogram: TPrometheusHistogram);
+begin
+  TestHistogram := Histogram;
+  FreeOnTerminate := False;
+  inherited Create(False);
+end;
+
+procedure TTestThread.Execute;
+var
+  I: integer;
+begin
+  for I := 1 to 5000 do
+    TestHistogram.Observe(4.2);
+end;
+
+{ TTestHistogram }
 
 procedure TTestHistogram.SetUp;
 begin
@@ -120,6 +151,32 @@ begin
     'Can not modify buckets if they''re already set');
   Histogram.Observe(42);
   Histogram.SetBuckets(CustomBuckets);
+end;
+
+procedure TTestHistogram.TestHistogramIsThreadSafe;
+var
+  I: integer;
+  Threads: array[1..16] of TTestThread;
+  Buckets: array of TPrometheusBucket;
+begin
+  for I := Low(Threads) to High(Threads) do
+    Threads[I] := TTestThread.Create(Histogram);
+
+  for I := Low(Threads) to High(Threads) do
+    Threads[I].WaitFor;
+
+  for I := Low(Threads) to High(Threads) do
+    Threads[I].Free;
+
+  AssertEquals(80000, Histogram.GetMetric.Counter);
+  AssertEquals(4.2 * 80000, Histogram.GetMetric.TotalSum);
+  Buckets := Histogram.GetMetric.BucketCounters;
+  AssertEquals(11, Length(Buckets));
+  for I := Low(Buckets) to High(Buckets) do
+    if Buckets[I].UpperInclusiveBound > 4.2 then
+      AssertEquals(80000, Buckets[I].Counter)
+    else
+      AssertEquals(0, Buckets[I].Counter);
 end;
 
 initialization

@@ -58,10 +58,12 @@ end;
 
 procedure TPrometheusHistogram.Observe(Amount: double);
 begin
+  FMutex.Acquire;
   if not Assigned(Buckets) then
     SetBuckets(DEFAULT_BUCKETS);
 
   WithLabels([]).Observe(Amount);
+  FMutex.Release;
 end;
 
 procedure TPrometheusHistogram.SetBuckets(CustomBuckets: TPrometheusCustomBuckets);
@@ -145,11 +147,13 @@ procedure TPrometheusHistogramChildren.Observe(Amount: double);
 var
   I: integer;
 begin
+  FMutex.Acquire;
   Inc(Value.Counter);
   Value.TotalSum := Value.TotalSum + Amount;
   for I := Low(Value.BucketCounters) to High(Value.BucketCounters) do
     if Amount <= Value.BucketCounters[I].UpperInclusiveBound then
       Inc(Value.BucketCounters[I].Counter);
+  FMutex.Release;
 end;
 
 function TPrometheusHistogramChildren.GetMetric: TPrometheusBucketResult;
