@@ -49,14 +49,14 @@ implementation
 procedure TPrometheusGaugeChildren.Inc(Amount: double);
 begin
   FMutex.Acquire;
-  Value := Amount + Value;
+  Value := Value + Amount;
   FMutex.Release;
 end;
 
 procedure TPrometheusGaugeChildren.Dec(Amount: double);
 begin
   FMutex.Acquire;
-  Value := Amount - Value;
+  Value := Value - Amount;
   FMutex.Release;
 end;
 
