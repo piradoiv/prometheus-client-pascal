@@ -56,7 +56,7 @@ procedure TCounterThread.Execute;
 var
   I: integer;
 begin
-  for I := 1 to 1000 do
+  for I := 1 to 5000 do
     TestCounter.Inc;
 end;
 
@@ -263,7 +263,7 @@ end;
 procedure TTestCounter.TestCounterIsThreadSafe;
 var
   I: integer;
-  Threads: array[1..4] of TCounterThread;
+  Threads: array[1..16] of TCounterThread;
 begin
   for I := Low(Threads) to High(Threads) do
     Threads[I] := TCounterThread.Create(TestCounter);
@@ -274,7 +274,7 @@ begin
   for I := Low(Threads) to High(Threads) do
     Threads[I].Free;
 
-  AssertEquals(4000, TestCounter.GetMetricAsDouble);
+  AssertEquals(80000, TestCounter.GetMetricAsDouble);
 end;
 
 initialization
