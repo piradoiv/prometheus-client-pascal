@@ -19,12 +19,10 @@ type
   protected
     FOptions: TPrometheusOptions;
     FStorage: TFPHashObjectList;
-    FMutex: TRTLCriticalSection;
+    FMutex: TCriticalSection;
     procedure ValidateMetricName(Name: string);
     procedure ValidateLabelName(Name: string);
     procedure BuildStorage;
-    procedure Lock;
-    procedure Unlock;
     function GetKeyFromLabels(LabelArray: array of const): string;
     function GetMetricName(LabelString: string): string;
     function GetMetricType: string;
@@ -100,16 +98,6 @@ begin
   FStorage := TFPHashObjectList.Create(True);
 end;
 
-procedure TPrometheusCustomCollector.Lock;
-begin
-  EnterCriticalSection(FMutex);
-end;
-
-procedure TPrometheusCustomCollector.Unlock;
-begin
-  LeaveCriticalSection(FMutex);
-end;
-
 function TPrometheusCustomCollector.GetKeyFromLabels(LabelArray: array of const): string;
 var
   LabelName: string;
@@ -175,7 +163,7 @@ end;
 
 constructor TPrometheusCustomCollector.Create(Options: TPrometheusOptions);
 begin
-  InitCriticalSection(FMutex);
+  FMutex := TCriticalSection.Create;
   FOptions := Options;
   BuildStorage;
   ValidateMetricName(Options.Name);
@@ -194,7 +182,7 @@ destructor TPrometheusCustomCollector.Destroy;
 begin
   FStorage.Clear;
   FStorage.Free;
-  DoneCriticalSection(FMutex);
+  FMutex.Free;
   inherited Destroy;
 end;
 

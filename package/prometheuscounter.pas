@@ -35,7 +35,9 @@ implementation
 
 procedure TPrometheusCounter.Inc(Amount: double);
 begin
+  FMutex.Acquire;
   WithLabels([]).Inc(Amount);
+  FMutex.Release;
 end;
 
 function TPrometheusCounter.GetMetricAsDouble: double;
@@ -70,9 +72,9 @@ begin
   if Amount < 0 then
     raise Exception.Create('Increment must be a non-negative number');
 
-  Lock;
+  FMutex.Acquire;
   Value := Value + Amount;
-  Unlock;
+  FMutex.Release;
 end;
 
 function TPrometheusCounterChildren.GetMetricAsDouble: double;
