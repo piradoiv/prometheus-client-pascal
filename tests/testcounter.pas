@@ -48,8 +48,8 @@ implementation
 constructor TCounterThread.Create(Counter: TPrometheusCounter);
 begin
   TestCounter := Counter;
-  FreeOnTerminate := False;
-  inherited Create(True);
+  FreeOnTerminate := True;
+  inherited Create(False);
 end;
 
 procedure TCounterThread.Execute;
@@ -266,16 +266,10 @@ var
   Threads: array[1..4] of TCounterThread;
 begin
   for I := Low(Threads) to High(Threads) do
-  begin
     Threads[I] := TCounterThread.Create(TestCounter);
-    Threads[I].Start;
-  end;
 
   for I := Low(Threads) to High(Threads) do
     Threads[I].WaitFor;
-
-  for I := High(Threads) to Low(Threads) do
-    Threads[I].Free;
 
   AssertEquals(4000, TestCounter.GetMetricAsDouble);
 end;
