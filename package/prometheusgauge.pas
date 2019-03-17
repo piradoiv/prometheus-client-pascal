@@ -48,22 +48,30 @@ implementation
 
 procedure TPrometheusGaugeChildren.Inc(Amount: double);
 begin
+  FMutex.Acquire;
   Value := Value + Amount;
+  FMutex.Release;
 end;
 
 procedure TPrometheusGaugeChildren.Dec(Amount: double);
 begin
+  FMutex.Acquire;
   Value := Value - Amount;
+  FMutex.Release;
 end;
 
 procedure TPrometheusGaugeChildren.SetAmount(Amount: double);
 begin
+  FMutex.Acquire;
   Value := Amount;
+  FMutex.Release;
 end;
 
 procedure TPrometheusGaugeChildren.SetToCurrentTime;
 begin
+  FMutex.Acquire;
   Value := DateTimeToUnix(Now);
+  FMutex.Release;
 end;
 
 procedure TPrometheusGaugeChildren.StartTimer;
@@ -93,22 +101,30 @@ end;
 
 procedure TPrometheusGauge.Inc(Amount: double);
 begin
+  FMutex.Acquire;
   WithLabels([]).Inc(Amount);
+  FMutex.Release;
 end;
 
 procedure TPrometheusGauge.Dec(Amount: double);
 begin
+  FMutex.Acquire;
   WithLabels([]).Dec(Amount);
+  FMutex.Release;
 end;
 
 procedure TPrometheusGauge.SetAmount(Amount: double);
 begin
+  FMutex.Acquire;
   WithLabels([]).SetAmount(Amount);
+  FMutex.Release;
 end;
 
 procedure TPrometheusGauge.SetToCurrentTime;
 begin
+  FMutex.Acquire;
   WithLabels([]).SetToCurrentTime;
+  FMutex.Release;
 end;
 
 procedure TPrometheusGauge.StartTimer;
@@ -123,7 +139,9 @@ end;
 
 procedure TPrometheusGauge.SetDuration;
 begin
+  FMutex.Acquire;
   WithLabels([]).SetDuration;
+  FMutex.Release;
 end;
 
 function TPrometheusGauge.GetMetricAsDouble: double;

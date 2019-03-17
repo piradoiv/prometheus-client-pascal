@@ -5,7 +5,7 @@ unit PrometheusClasses;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, contnrs, Regexpr;
+  Classes, SysUtils, StrUtils, contnrs, Regexpr, Syncobjs;
 
 type
   TPrometheusOptions = packed record
@@ -19,6 +19,7 @@ type
   protected
     FOptions: TPrometheusOptions;
     FStorage: TFPHashObjectList;
+    FMutex: TCriticalSection;
     procedure ValidateMetricName(Name: string);
     procedure ValidateLabelName(Name: string);
     procedure BuildStorage;
@@ -162,9 +163,10 @@ end;
 
 constructor TPrometheusCustomCollector.Create(Options: TPrometheusOptions);
 begin
-  ValidateMetricName(Options.Name);
+  FMutex := TCriticalSection.Create;
   FOptions := Options;
   BuildStorage;
+  ValidateMetricName(Options.Name);
 end;
 
 constructor TPrometheusCustomCollector.Create(Name: string; Description: string);
@@ -178,11 +180,9 @@ end;
 
 destructor TPrometheusCustomCollector.Destroy;
 begin
-  if Assigned(FStorage) then
-  begin
-    FStorage.Clear;
-    FStorage.Free;
-  end;
+  FStorage.Clear;
+  FStorage.Free;
+  FMutex.Free;
   inherited Destroy;
 end;
 

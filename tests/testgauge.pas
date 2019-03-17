@@ -26,9 +26,40 @@ type
     procedure TestCanSetAmount;
     procedure TestCanSetToCurrentTime;
     procedure TestCanUseTimer;
+    procedure TestGaugeIsThreadSafe;
+  end;
+
+  { TTestThread }
+
+  TTestThread = class(TThread)
+  private
+    TestGauge: TPrometheusGauge;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(Gauge: TPrometheusGauge);
   end;
 
 implementation
+
+{ TTestThread }
+
+constructor TTestThread.Create(Gauge: TPrometheusGauge);
+begin
+  TestGauge := Gauge;
+  FreeOnTerminate := False;
+  inherited Create(False);
+end;
+
+procedure TTestThread.Execute;
+var
+  I: integer;
+begin
+  for I := 1 to 5000 do
+    TestGauge.Inc;
+end;
+
+{ TTestGauge }
 
 procedure TTestGauge.SetUp;
 begin
@@ -121,6 +152,23 @@ begin
 
   AssertTrue('Children must be around OFFSET',
     Children.GetMetricAsDouble - OFFSET < 5);
+end;
+
+procedure TTestGauge.TestGaugeIsThreadSafe;
+var
+  I: integer;
+  Threads: array[1..16] of TTestThread;
+begin
+  for I := Low(Threads) to High(Threads) do
+    Threads[I] := TTestThread.Create(TestGauge);
+
+  for I := Low(Threads) to High(Threads) do
+    Threads[I].WaitFor;
+
+  for I := Low(Threads) to High(Threads) do
+    Threads[I].Free;
+
+  AssertEquals(80000, TestGauge.GetMetricAsDouble);
 end;
 
 initialization

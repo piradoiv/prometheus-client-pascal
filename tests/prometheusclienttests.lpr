@@ -2,7 +2,9 @@ program prometheusclienttests;
 
 {$mode objfpc}{$H+}
 
-uses
+uses {$IFDEF Unix}
+  CThreads,
+  CMem, {$ENDIF}
   Classes,
   consoletestrunner,
   TestPrometheusClient,
@@ -33,38 +35,38 @@ type
 var
   Application: TMyTestRunner;
 
-procedure TMyTestRunner.OnFailure(Sender: TObject; ATest: TTest;
-  AFailure: TTestFailure);
-begin
-  Success := False;
-end;
+  procedure TMyTestRunner.OnFailure(Sender: TObject; ATest: TTest;
+    AFailure: TTestFailure);
+  begin
+    Success := False;
+  end;
 
-procedure TMyTestRunner.DoTestRun(ATest: TTest);
-begin
-  GetResultsWriter.OnAddFailure := @OnFailure;
-  inherited DoTestRun(ATest);
-end;
+  procedure TMyTestRunner.DoTestRun(ATest: TTest);
+  begin
+    GetResultsWriter.OnAddFailure := @OnFailure;
+    inherited DoTestRun(ATest);
+  end;
 
-function TMyTestRunner.GetResultsWriter: TCustomResultsWriter;
-begin
-  if not Assigned(FResultsWritter) then
-    FResultsWritter := inherited GetResultsWriter;
+  function TMyTestRunner.GetResultsWriter: TCustomResultsWriter;
+  begin
+    if not Assigned(FResultsWritter) then
+      FResultsWritter := inherited GetResultsWriter;
 
-  Result := FResultsWritter;
-end;
+    Result := FResultsWritter;
+  end;
 
-constructor TMyTestRunner.Create(AOwner: TComponent);
-begin
-  Success := True;
-  inherited Create(AOwner);
-end;
+  constructor TMyTestRunner.Create(AOwner: TComponent);
+  begin
+    Success := True;
+    inherited Create(AOwner);
+  end;
 
-destructor TMyTestRunner.Destroy;
-begin
-  inherited Destroy;
-  if not Success then
-    Halt(1);
-end;
+  destructor TMyTestRunner.Destroy;
+  begin
+    inherited Destroy;
+    if not Success then
+      Halt(1);
+  end;
 
 begin
   Application := TMyTestRunner.Create(nil);

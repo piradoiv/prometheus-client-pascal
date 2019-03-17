@@ -6,9 +6,11 @@ interface
 
 uses
   Classes, SysUtils, fpcunit, testregistry, PrometheusRegistry,
-  PrometheusClasses, PrometheusCounter;
+  PrometheusClasses, PrometheusCounter, PrometheusGauge, PrometheusHistogram;
 
 type
+
+  { TTestPrometheusClient }
 
   TTestPrometheusClient = class(TTestCase)
   private
@@ -23,9 +25,50 @@ type
     procedure TestCanUnregisterCollector;
     procedure TestCanGetCollector;
     procedure TestCanCreateAndRegisterCounter;
+    procedure TestThreadSafety;
+  end;
+
+  { TTestThread }
+
+  TTestThread = class(TThread)
+  private
+    TestRegistry: TPrometheusRegistry;
+  protected
+    procedure Execute; override;
+  public
+    constructor Create(Registry: TPrometheusRegistry);
   end;
 
 implementation
+
+{ TTestThread }
+
+constructor TTestThread.Create(Registry: TPrometheusRegistry);
+begin
+  TestRegistry := Registry;
+  FreeOnTerminate := False;
+  inherited Create(False);
+end;
+
+procedure TTestThread.Execute;
+var
+  Counter: TPrometheusCounter;
+  Gauge: TPrometheusGauge;
+  Histogram: TPrometheusHistogram;
+  I: integer;
+begin
+  Counter := TPrometheusCounter(TestRegistry.Get('test_counter'));
+  Gauge := TPrometheusGauge(TestRegistry.Get('test_gauge'));
+  Histogram := TPrometheusHistogram(TestRegistry.Get('test_histogram'));
+
+  for I := 1 to 100 do
+  begin
+    Counter.Inc;
+    Gauge.Inc;
+    Histogram.Observe(4.2);
+    Sleep(Random(2));
+  end;
+end;
 
 procedure TTestPrometheusClient.SetUp;
 begin
@@ -91,6 +134,32 @@ begin
   Counter := Registry.Counter('test', 'help');
   Counter.Inc(42);
   AssertEquals(42, Counter.GetMetricAsDouble);
+end;
+
+procedure TTestPrometheusClient.TestThreadSafety;
+var
+  Counter: TPrometheusCounter;
+  Gauge: TPrometheusGauge;
+  Histogram: TPrometheusHistogram;
+  I: integer;
+  Threads: array[1..16] of TTestThread;
+begin
+  Counter := Registry.Counter('test_counter', 'Test Counter');
+  Gauge := Registry.Gauge('test_gauge', 'Test Gauge');
+  Histogram := Registry.Histogram('test_histogram', 'Test Histogram');
+
+  for I := Low(Threads) to High(Threads) do
+    Threads[I] := TTestThread.Create(Registry);
+
+  for I := Low(Threads) to High(Threads) do
+    Threads[I].WaitFor;
+
+  for I := Low(Threads) to High(Threads) do
+    Threads[I].Free;
+
+  AssertEquals(1600, Counter.GetMetricAsDouble);
+  AssertEquals(1600, Gauge.GetMetricAsDouble);
+  AssertEquals(1600, Histogram.GetMetric.Counter);
 end;
 
 initialization
