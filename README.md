@@ -12,7 +12,7 @@ Usage examples can be found under [examples](./examples) folder.
 
 ## Implementation status
 
-This library is in alpha stage, and is not intended for production use yet. While you won't have memory leak issues, this client is NOT thread safe at the moment (but surely will be). A roadmap is available through the [milestones](https://github.com/piradoiv/prometheus-client-pascal/milestones) section of this repository.
+This library is in alpha stage, and is not intended for production use yet. A roadmap is available through the [milestones](https://github.com/piradoiv/prometheus-client-pascal/milestones) section of this repository.
 
 ### Metrics
 
