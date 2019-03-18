@@ -16,8 +16,8 @@ This library is in alpha stage, and is not intended for production use yet. A ro
 
 ### Metrics
 
-- [Counter](https://prometheus.io/docs/concepts/metric_types/#counter) 👷 Not finished yet, but usable
-- [Gauge](https://prometheus.io/docs/concepts/metric_types/#gauge) 👷 Not finished yet, but usable
-- [Histogram](https://prometheus.io/docs/concepts/metric_types/#histogram) 👷 Not finished yet, but usable
+- [Counter](https://prometheus.io/docs/concepts/metric_types/#counter) ✅ Working
+- [Gauge](https://prometheus.io/docs/concepts/metric_types/#gauge) ✅ Working
+- [Histogram](https://prometheus.io/docs/concepts/metric_types/#histogram) ✅ Working
 - [Summary](https://prometheus.io/docs/concepts/metric_types/#summary) ❌ Not implemented yet
 
