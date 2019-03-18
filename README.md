@@ -1,4 +1,4 @@
-**Home** | [Examples](/examples/)
+**Home** | [Examples](examples)
 
 # Prometheus Client for FreePascal [![Build Status](https://travis-ci.org/piradoiv/prometheus-client-pascal.svg?branch=master)](https://travis-ci.org/piradoiv/prometheus-client-pascal)
 
