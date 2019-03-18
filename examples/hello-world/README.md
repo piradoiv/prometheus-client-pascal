@@ -1,3 +1,5 @@
+[Home](..) | [Examples](..)
+
 # Hello, Prometheus!
 
 This is a very basic usage example of the library, and probably useless, but includes everything you need to know for getting started.
