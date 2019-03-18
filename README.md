@@ -1,3 +1,5 @@
+**Home** | [Examples](/examples/)
+
 # Prometheus Client for FreePascal [![Build Status](https://travis-ci.org/piradoiv/prometheus-client-pascal.svg?branch=master)](https://travis-ci.org/piradoiv/prometheus-client-pascal)
 
 This is the [FreePascal](https://www.freepascal.org/) client library for [Prometheus](https://prometheus.io/), an open-source systems monitoring and alerting toolkit. Combined with [Grafana](https://grafana.com/), you'll be able to create dashboards and see what's happening inside your application.
