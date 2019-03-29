@@ -16,10 +16,23 @@ Usage examples can be found under [examples](./examples) folder.
 
 This library is in alpha stage, and is not intended for production use yet. A roadmap is available through the [milestones](https://github.com/piradoiv/prometheus-client-pascal/milestones) section of this repository.
 
-### Metrics
+### Available collectors
 
 - [Counter](https://prometheus.io/docs/concepts/metric_types/#counter) ✅ Working
 - [Gauge](https://prometheus.io/docs/concepts/metric_types/#gauge) ✅ Working
 - [Histogram](https://prometheus.io/docs/concepts/metric_types/#histogram) ✅ Working
 - [Summary](https://prometheus.io/docs/concepts/metric_types/#summary) ❌ Not implemented yet
 
+## Using this library without Lazarus
+
+You can link the library by passing the [package](package) directory while building your program.
+
+```
+$ fpc -Fu<path-to-prometheus-library-folder> yourprogram.pas
+```
+
+Check [Hello world](https://github.com/piradoiv/prometheus-client-pascal/blob/master/examples/hello-world/) example, as it includes a Makefile that doesn't depends on Lazarus.
+
+## Using this library with Lazarus
+
+Clone this repository and open the file `package/prometheus.lpk`
